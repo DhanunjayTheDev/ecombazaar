@@ -1,0 +1,25 @@
+@import 'tailwindcss';
+
+@layer base {
+  :root {
+    --color-primary: #FF6B00;
+  }
+
+  * {
+    @apply box-border m-0 p-0;
+  }
+
+  body {
+    @apply font-sans bg-white text-gray-900;
+  }
+
+  html, body, #root {
+    @apply w-full h-full;
+  }
+}
+
+@layer utilities {
+  .line-clamp-2 {
+    @apply line-clamp-2;
+  }
+}

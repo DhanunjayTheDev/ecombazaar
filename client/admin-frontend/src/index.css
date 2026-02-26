@@ -1,0 +1,15 @@
+@import 'tailwindcss';
+
+@layer base {
+  * {
+    @apply box-border m-0 p-0;
+  }
+
+  body {
+    @apply font-sans bg-gray-100 text-gray-900;
+  }
+
+  html, body, #root {
+    @apply w-full h-full;
+  }
+}
