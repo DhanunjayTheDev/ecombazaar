@@ -1,66 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Edit2, Trash2, Search, X, ChevronDown, Check, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, Check, Image as ImageIcon, Sparkles, Loader2 } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-
-// ── Custom Dropdown Component ──────────────────────────────────────────────
-function CustomSelect({ value, onChange, options, placeholder = 'Select…', allowCustom = false }) {
-  const [open, setOpen] = useState(false);
-  const [customInput, setCustomInput] = useState('');
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  const choose = (val) => { onChange(val); setOpen(false); setCustomInput(''); };
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-left flex items-center justify-between outline-none focus:border-orange-400 bg-white hover:border-gray-300 transition"
-      >
-        <span className={value ? 'text-gray-800' : 'text-gray-400'}>{value || placeholder}</span>
-        <ChevronDown size={15} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden">
-          {allowCustom && (
-            <div className="p-2 border-b border-gray-100">
-              <input
-                autoFocus
-                value={customInput}
-                onChange={e => setCustomInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && customInput.trim()) choose(customInput.trim()); }}
-                placeholder="Type new category & press Enter"
-                className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-orange-400"
-              />
-            </div>
-          )}
-          <ul className="py-1 max-h-52 overflow-y-auto">
-            {options.length === 0 && (
-              <li className="px-4 py-3 text-sm text-gray-400 text-center">No categories yet — type above</li>
-            )}
-            {options.map(opt => (
-              <li
-                key={opt}
-                onClick={() => choose(opt)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm cursor-pointer hover:bg-orange-50 transition ${value === opt ? 'text-orange-600 font-medium' : 'text-gray-700'}`}
-              >
-                <Check size={13} className={value === opt ? 'opacity-100 text-orange-500' : 'opacity-0'} />
-                {opt}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
+import CustomSelect from '../components/CustomSelect';
 
 // ── Key Features Tag Input ─────────────────────────────────────────────────
 function KeyFeaturesInput({ value, onChange }) {
@@ -106,10 +48,10 @@ export default function Products() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [selected, setSelected] = useState([]);
-  const [form, setForm] = useState(emptyForm);
-  const [imageFiles, setImageFiles] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
-  const [saving, setSaving] = useState(false);
+  const [form, setForm]               = useState(emptyForm);
+  const [imagePreviews, setImagePreviews] = useState([]);   // Cloudinary URLs
+  const [imageUploading, setImageUploading] = useState(false);
+  const [saving, setSaving]           = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -128,7 +70,6 @@ export default function Products() {
 
   const openModal = (product = null) => {
     setEditing(product);
-    setImageFiles([]);
     setImagePreviews(product?.images || []);
     setForm(product ? {
       name: product.name || '', category: product.category || '', brand: product.brand || '',
@@ -138,37 +79,43 @@ export default function Products() {
     } : emptyForm);
     setModalOpen(true);
   };
-  const closeModal = () => { setModalOpen(false); setEditing(null); setImageFiles([]); setImagePreviews([]); };
+  const closeModal = () => { setModalOpen(false); setEditing(null); setImagePreviews([]); };
 
-  const handleImages = (e) => {
+  // Upload each selected image to Cloudinary immediately, then store the URL
+  const handleImages = async (e) => {
     const files = Array.from(e.target.files);
-    setImageFiles(prev => [...prev, ...files]);
-    setImagePreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))]);
+    if (!files.length) return;
+    setImageUploading(true);
+    try {
+      const urls = await Promise.all(files.map(async (file) => {
+        const fd = new FormData();
+        fd.append('image', file);
+        const { data } = await api.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        return data.url;
+      }));
+      setImagePreviews(prev => [...prev, ...urls]);
+    } catch { toast.error('Image upload failed'); }
+    finally { setImageUploading(false); e.target.value = ''; }
   };
-  const removePreview = (idx) => {
-    setImagePreviews(prev => prev.filter((_, i) => i !== idx));
-    setImageFiles(prev => prev.filter((_, i) => i !== idx));
-  };
+  const removePreview = (idx) => setImagePreviews(prev => prev.filter((_, i) => i !== idx));
 
   const handleSave = async (e) => {
     e.preventDefault();
     if (!form.name || !form.category || !form.price || !form.stock) { toast.error('Fill all required fields'); return; }
     setSaving(true);
     try {
-      const fd = new FormData();
-      ['name', 'category', 'brand', 'price', 'discountPrice', 'stock', 'description'].forEach(k => {
-        if (form[k] !== '' && form[k] !== undefined) fd.append(k, form[k]);
-      });
-      fd.append('isActive', form.isActive);
-      fd.append('keyFeatures', JSON.stringify(form.keyFeatures));
-      imageFiles.forEach(f => fd.append('images', f));
-
-      const config = { headers: { 'Content-Type': 'multipart/form-data' } };
+      // Images are already Cloudinary URLs stored in imagePreviews
+      const payload = {
+        name: form.name, category: form.category, brand: form.brand,
+        price: form.price, discountPrice: form.discountPrice, stock: form.stock,
+        description: form.description, isActive: form.isActive,
+        keyFeatures: form.keyFeatures, images: imagePreviews,
+      };
       if (editing) {
-        const { data } = await api.put(`/products/${editing._id}`, fd, config);
+        const { data } = await api.put(`/products/${editing._id}`, payload);
         if (data.success) { setProducts(prev => prev.map(p => p._id === editing._id ? data.product : p)); toast.success('Product updated'); }
       } else {
-        const { data } = await api.post('/products', fd, config);
+        const { data } = await api.post('/products', payload);
         if (data.success) {
           setProducts(prev => [data.product, ...prev]);
           if (!categories.includes(form.category)) setCategories(prev => [...prev, form.category].sort());
@@ -365,13 +312,15 @@ export default function Products() {
                       </button>
                     </div>
                   ))}
-                  <label className="w-20 h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition">
-                    <ImageIcon size={18} className="text-gray-400" />
-                    <span className="text-xs text-gray-400">Add</span>
-                    <input type="file" multiple accept="image/*" onChange={handleImages} className="hidden" />
+                  <label className={`w-20 h-20 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition ${imageUploading ? 'border-orange-300 bg-orange-50 cursor-wait' : 'border-gray-200 cursor-pointer hover:border-orange-400 hover:bg-orange-50'}`}>
+                    {imageUploading
+                      ? <Loader2 size={18} className="text-orange-500 animate-spin" />
+                      : <><ImageIcon size={18} className="text-gray-400" /><span className="text-xs text-gray-400">Add</span></>
+                    }
+                    <input type="file" multiple accept="image/*" onChange={handleImages} className="hidden" disabled={imageUploading} />
                   </label>
                 </div>
-                <p className="text-xs text-gray-400 mt-2">Max 8 images, 5MB each (JPG, PNG, WebP)</p>
+                <p className="text-xs text-gray-400 mt-2">Uploaded to Cloudinary · Max 8 images, 5 MB each (JPG, PNG, WebP)</p>
               </div>
 
               {/* Status Toggle */}
@@ -388,9 +337,9 @@ export default function Products() {
 
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={closeModal} className="flex-1 border border-gray-200 rounded-xl py-2.5 text-sm font-medium hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" disabled={saving}
+                <button type="submit" disabled={saving || imageUploading}
                   className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white rounded-xl py-2.5 text-sm font-bold transition">
-                  {saving ? 'Saving…' : editing ? 'Update Product' : 'Create Product'}
+                  {saving ? 'Saving…' : imageUploading ? 'Uploading images…' : editing ? 'Update Product' : 'Create Product'}
                 </button>
               </div>
             </form>

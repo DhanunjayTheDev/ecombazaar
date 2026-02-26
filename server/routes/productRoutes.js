@@ -30,7 +30,7 @@ router.get('/categories', getCategories);
 router.get('/admin/all', protect, adminOnly, getAllProductsAdmin);
 router.get('/', getProducts);
 router.get('/:id', getProductById);
-router.post('/', protect, adminOnly, upload.array('images', 8), createProduct);
+router.post('/', protect, adminOnly, createProduct);
 router.put('/:id', protect, adminOnly, updateProduct);
 router.delete('/:id', protect, adminOnly, deleteProduct);
 router.post('/:id/review', protect, upload.array('reviewImages', 4), addReview);

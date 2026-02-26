@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, X, Printer, Download, Package, MapPin, CreditCard, Clock, User, ChevronDown, RefreshCw, Filter } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import CustomSelect from '../components/CustomSelect';
 
 const STATUS_OPTIONS = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 const STATUS_COLORS = {
@@ -17,6 +18,55 @@ const STATUS_TIMELINE = {
   Shipped:    2,
   Delivered:  3,
 };
+const STATUS_DOT = {
+  Pending:    'bg-yellow-400',
+  Processing: 'bg-blue-400',
+  Shipped:    'bg-purple-400',
+  Delivered:  'bg-green-400',
+  Cancelled:  'bg-red-400',
+};
+
+// Compact status badge + dropdown for the orders table
+function StatusDropdown({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer select-none ${
+          STATUS_COLORS[value] || 'bg-gray-100 text-gray-600 border-gray-200'
+        }`}
+      >
+        {value}
+        <ChevronDown size={10} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute z-50 left-0 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden">
+          {STATUS_OPTIONS.map(s => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => { onChange(s); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-xs hover:bg-orange-50 transition flex items-center gap-2 ${
+                s === value ? 'font-semibold text-orange-600' : 'text-gray-700'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[s] || 'bg-gray-400'}`} />
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Print / Download helper ───────────────────────────────────────────────
 function buildInvoiceHTML(order) {
@@ -429,12 +479,14 @@ export default function Orders() {
           {search && <button onClick={() => setSearch('')}><X size={13} className="text-gray-300" /></button>}
         </div>
         <div className="flex items-center gap-2">
-          <Filter size={14} className="text-gray-400" />
-          <select value={filter} onChange={e => { setFilter(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none bg-white">
-            <option value="">All Statuses</option>
-            {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
-          </select>
+          <Filter size={14} className="text-gray-400 shrink-0" />
+          <CustomSelect
+            value={filter || 'All Statuses'}
+            onChange={v => { setFilter(v === 'All Statuses' ? '' : v); setPage(1); }}
+            options={['All Statuses', ...STATUS_OPTIONS]}
+            placeholder="All Statuses"
+            className="min-w-[140px]"
+          />
         </div>
       </div>
 
@@ -476,15 +528,10 @@ export default function Orders() {
                     {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}
                   </td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                    <select value={order.status}
-                      onChange={e => updateStatus(order._id, e.target.value)}
-                      className={`text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer appearance-none outline-none ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}
-                    >
-                      {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                    <StatusDropdown value={order.status} onChange={s => updateStatus(order._id, s)} />
                   </td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                    <div className="flex items-center gap-1">
                       <button onClick={() => setSelectedOrder(order)} className="p-1.5 hover:bg-gray-100 rounded-lg transition" title="View Details">
                         <ChevronDown size={13} className="text-gray-400" />
                       </button>
