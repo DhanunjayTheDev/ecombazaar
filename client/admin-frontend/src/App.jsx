@@ -1,6 +1,7 @@
 ﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
+import NotificationPermissionModal from './components/NotificationPermissionModal';
 import AdminRoute from './components/AdminRoute';
 import AdminLayout from './components/AdminLayout';
 import AdminLogin from './pages/AdminLogin';
@@ -19,6 +20,7 @@ export default function App() {
     <AdminAuthProvider>
       <BrowserRouter>
         <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <NotificationPermissionModal />
         <Routes>
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route

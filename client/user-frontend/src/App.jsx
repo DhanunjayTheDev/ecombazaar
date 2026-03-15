@@ -5,6 +5,7 @@ import { CartProvider } from './contexts/CartContext';
 import { WishlistProvider } from './contexts/WishlistContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import NotificationPermissionModal from './components/NotificationPermissionModal';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
@@ -33,6 +34,7 @@ export default function App() {
         <CartProvider>
           <WishlistProvider>
             <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+            <NotificationPermissionModal />
             <Routes>
               <Route path="/" element={<Layout><Home /></Layout>} />
               <Route path="/shop" element={<Layout><Shop /></Layout>} />
