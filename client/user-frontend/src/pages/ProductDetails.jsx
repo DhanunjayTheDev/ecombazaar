@@ -4,9 +4,8 @@ import { Star, ShoppingCart, Heart, ChevronRight, Minus, Plus, Truck, Shield, Pa
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useAuth } from '../contexts/AuthContext';
-import { MOCK_PRODUCTS, fakeDelay } from '../utils/mockData';
-import toast from 'react-hot-toast';
 import api from '../utils/api';
+import toast from 'react-hot-toast';
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -34,10 +33,10 @@ export default function ProductDetails() {
       try {
         const { data } = await api.get(`/products/${id}`);
         setProduct(data.product);
-      } catch {
-        await fakeDelay(400);
-        const mock = MOCK_PRODUCTS.find(p => p._id === id) || MOCK_PRODUCTS[0];
-        setProduct(mock);
+      } catch (err) {
+        console.error('Error fetching product:', err);
+        toast.error('Failed to load product');
+        setProduct(null);
       } finally { setLoading(false); }
     };
     fetch();

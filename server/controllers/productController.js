@@ -124,6 +124,25 @@ exports.addReview = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// @desc Delete review
+// @route DELETE /api/products/:id/reviews/:reviewId
+exports.deleteReview = async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    product.reviews = product.reviews.filter(r => r._id.toString() !== req.params.reviewId);
+    product.numReviews = product.reviews.length;
+    product.rating = product.reviews.length > 0 
+      ? (product.reviews.reduce((acc, r) => acc + r.rating, 0) / product.reviews.length).toFixed(1)
+      : 0;
+    
+    await product.save();
+    console.log(`✅ [REVIEW] Deleted from product: ${product.name}`);
+    res.json({ success: true, message: 'Review deleted successfully', product });
+  } catch (err) { next(err); }
+};
+
 // @desc Get all categories from Category collection
 // @route GET /api/products/categories
 exports.getCategories = async (req, res, next) => {

@@ -3,12 +3,12 @@ import { useSearchParams } from 'react-router-dom';
 import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { SkeletonGrid } from '../components/SkeletonLoader';
-import { MOCK_PRODUCTS, MOCK_CATEGORIES, fakeDelay } from '../utils/mockData';
 import api from '../utils/api';
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
@@ -33,18 +33,31 @@ export default function Shop() {
       setProducts(data.products);
       setTotal(data.total);
       setPages(data.pages);
-    } catch {
-      await fakeDelay(400);
-      let filtered = MOCK_PRODUCTS;
-      if (category) filtered = filtered.filter(p => p.category === category);
-      if (keyword) filtered = filtered.filter(p => p.name.toLowerCase().includes(keyword.toLowerCase()));
-      setProducts(filtered);
-      setTotal(filtered.length);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setProducts([]);
+      setTotal(0);
       setPages(1);
     } finally { setLoading(false); }
   }, [keyword, category, sort, page, minPrice, maxPrice]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  // Fetch categories for sidebar filter
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data } = await api.get('/categories');
+        if (data.success && data.categories) {
+          setCategories(data.categories);
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+        setCategories([]);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const updateParam = (key, value) => {
     const next = new URLSearchParams(searchParams);
@@ -100,7 +113,7 @@ export default function Shop() {
             <div className="mb-5">
               <p className="text-sm font-medium text-gray-700 mb-2">Category</p>
               <ul className="space-y-1">
-                {['', ...MOCK_CATEGORIES].map(cat => (
+                {['', ...categories.map(c => c.name || c)].map(cat => (
                   <li key={cat}>
                     <button
                       onClick={() => updateParam('category', cat)}

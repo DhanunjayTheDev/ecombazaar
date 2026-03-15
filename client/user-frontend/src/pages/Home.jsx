@@ -3,25 +3,73 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Truck, Shield, RefreshCw, Headphones, Star, ChevronRight } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { SkeletonCard } from '../components/SkeletonLoader';
-import { MOCK_PRODUCTS, MOCK_CATEGORIES, MOCK_TESTIMONIALS, fakeDelay } from '../utils/mockData';
 import api from '../utils/api';
 
 export default function Home() {
   const [featured, setFeatured] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState({ h: 5, m: 30, s: 0 });
 
+  // Fetch featured products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const { data } = await api.get('/products?limit=8');
         setFeatured(data.products);
-      } catch {
-        await fakeDelay(600);
-        setFeatured(MOCK_PRODUCTS);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setFeatured([]);
       } finally { setLoading(false); }
     };
     fetchProducts();
+  }, []);
+
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data } = await api.get('/categories');
+        if (data.success && data.categories) {
+          setCategories(data.categories.slice(0, 7));
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+        setCategories([]);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Fetch testimonials from product reviews
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const { data } = await api.get('/products?limit=100');
+        if (data.products && data.products.length > 0) {
+          const allReviews = [];
+          data.products.forEach(product => {
+            if (product.reviews && product.reviews.length > 0) {
+              product.reviews.slice(0, 1).forEach(review => {
+                allReviews.push({
+                  id: review._id || `${product._id}-${review.user}`,
+                  name: review.user || 'Customer',
+                  comment: review.comment,
+                  rating: review.rating,
+                  avatar: (review.user || 'C')[0].toUpperCase(),
+                });
+              });
+            }
+          });
+          setTestimonials(allReviews.slice(0, 3));
+        }
+      } catch (err) {
+        console.error('Error fetching testimonials:', err);
+        setTestimonials([]);
+      }
+    };
+    fetchTestimonials();
   }, []);
 
   // Countdown timer
@@ -100,16 +148,17 @@ export default function Home() {
           </Link>
         </div>
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3">
-          {MOCK_CATEGORIES.map((cat, i) => {
+          {categories.map((cat, i) => {
             const emojis = ['📱', '👗', '⚽', '🍳', '📚', '💄', '🏠'];
+            const categoryName = cat.name || cat;
             return (
               <Link
-                key={cat}
-                to={`/shop?category=${cat}`}
+                key={cat._id || cat}
+                to={`/shop?category=${categoryName}`}
                 className="bg-white rounded-2xl border border-gray-100 hover:border-orange-200 hover:shadow-md transition p-4 text-center flex flex-col items-center gap-2 group"
               >
                 <span className="text-3xl">{emojis[i] || '🛍'}</span>
-                <span className="text-xs font-medium text-gray-700 group-hover:text-orange-500 transition">{cat}</span>
+                <span className="text-xs font-medium text-gray-700 group-hover:text-orange-500 transition">{categoryName}</span>
               </Link>
             );
           })}
@@ -176,7 +225,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 py-12">
         <h2 className="text-2xl font-bold text-gray-800 text-center mb-8">What Our Customers Say</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {MOCK_TESTIMONIALS.map(t => (
+          {testimonials.length > 0 ? testimonials.map(t => (
             <div key={t.id} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
               <div className="flex text-yellow-400 mb-3">
                 {Array.from({ length: t.rating }).map((_, i) => <Star key={i} size={16} className="fill-yellow-400" />)}
@@ -187,7 +236,9 @@ export default function Home() {
                 <span className="font-medium text-gray-800 text-sm">{t.name}</span>
               </div>
             </div>
-          ))}
+          )) : (
+            <p className="text-center text-gray-500 col-span-full">No testimonials yet</p>
+          )}
         </div>
       </section>
 

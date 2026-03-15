@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Ban, Trash2, ShieldCheck, Eye } from 'lucide-react';
-import { MOCK_USERS, fakeDelay } from '../utils/mockData';
+import { Search, Ban, Trash2, ShieldCheck } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 

@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const {
   getProducts, getProductById, createProduct, updateProduct,
-  deleteProduct, getAllProductsAdmin, addReview, getCategories,
+  deleteProduct, getAllProductsAdmin, addReview, deleteReview, getCategories,
 } = require('../controllers/productController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
@@ -33,6 +33,7 @@ router.get('/:id', getProductById);
 router.post('/', protect, adminOnly, createProduct);
 router.put('/:id', protect, adminOnly, updateProduct);
 router.delete('/:id', protect, adminOnly, deleteProduct);
-router.post('/:id/review', protect, upload.array('reviewImages', 4), addReview);
+router.post('/:id/reviews', protect, upload.array('reviewImages', 4), addReview);
+router.delete('/:id/reviews/:reviewId', protect, adminOnly, deleteReview);
 
 module.exports = router;

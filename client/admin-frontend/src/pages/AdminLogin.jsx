@@ -85,11 +85,6 @@ export default function AdminLogin() {
               {loading ? 'Signing in...' : 'Sign In to Admin'}
             </button>
           </form>
-
-          <div className="mt-5 bg-orange-50 border border-orange-100 rounded-xl p-3.5 text-center">
-            <p className="text-xs font-medium text-orange-700 mb-1">Demo Credentials</p>
-            <p className="text-xs text-orange-600">admin@store.com / admin123</p>
-          </div>
         </div>
       </div>
     </div>

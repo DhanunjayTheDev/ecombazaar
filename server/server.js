@@ -26,17 +26,27 @@ const app = express();
 app.use(morgan('dev'));
 
 // Middleware
-const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:5173',
-  process.env.ADMIN_URL  || 'http://localhost:5174',
+let allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  ...(process.env.CLIENT_URL || '').split(',').map(u => u.trim()).filter(Boolean),
+  ...(process.env.ADMIN_URL || '').split(',').map(u => u.trim()).filter(Boolean),
 ];
+allowedOrigins = [...new Set(allowedOrigins)]; // Remove duplicates
+console.log('✅ CORS Allowed Origins:', allowedOrigins);
+
 app.use(cors({
   origin: (origin, callback) => {
-    // allow requests with no origin (curl, mobile apps, etc.)
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error(`CORS blocked for origin: ${origin}`));
+    // Allow requests with no origin (curl, mobile apps, etc.) or matching origins
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    
+    console.warn(`⚠️ CORS blocked for origin: ${origin}`);
+    callback(null, false); // Reject without throwing error
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

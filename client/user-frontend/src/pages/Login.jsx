@@ -62,12 +62,6 @@ export default function Login() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
-
-          {/* Demo credentials */}
-          <div className="mt-4 p-3 bg-orange-50 rounded-xl text-xs text-gray-500">
-            <strong>Demo Admin:</strong> admin@store.com / admin123
-          </div>
-
           <p className="text-center text-sm text-gray-500 mt-5">
             Don't have an account?{' '}
             <Link to="/register" className="text-orange-500 font-medium hover:underline">Sign up</Link>

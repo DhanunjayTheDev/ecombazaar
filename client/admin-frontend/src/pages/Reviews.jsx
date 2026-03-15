@@ -1,15 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Star, Trash2, Search } from 'lucide-react';
-import { fakeDelay } from '../utils/mockData';
+import { useState, useEffect, useCallback } from 'react';
+import { Star, Trash2, Search, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-const MOCK_REVIEWS = [
-  { _id: 'r1', user: { name: 'Alice Johnson' }, product: { name: 'Wireless Headphones', _id: 'p1' }, rating: 5, comment: 'Absolutely love them! Great sound quality.', createdAt: '2025-06-01T10:00:00Z' },
-  { _id: 'r2', user: { name: 'Bob Smith' }, product: { name: 'Running Shoes', _id: 'p2' }, rating: 4, comment: 'Very comfortable for long runs.', createdAt: '2025-06-05T12:30:00Z' },
-  { _id: 'r3', user: { name: 'Carol White' }, product: { name: 'Yoga Mat', _id: 'p3' }, rating: 3, comment: 'Decent quality but a bit thin.', createdAt: '2025-06-08T09:15:00Z' },
-  { _id: 'r4', user: { name: 'David Lee' }, product: { name: 'Coffee Maker', _id: 'p4' }, rating: 5, comment: 'Makes the perfect cup every morning!', createdAt: '2025-06-10T08:00:00Z' },
-  { _id: 'r5', user: { name: 'Eva Martinez' }, product: { name: 'Wireless Headphones', _id: 'p1' }, rating: 2, comment: 'Bass is weak. Not worth the price.', createdAt: '2025-06-12T14:45:00Z' },
-];
+import api from '../utils/api';
 
 const Stars = ({ rating }) => (
   <div className="flex gap-0.5">
@@ -25,25 +17,47 @@ export default function Reviews() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
 
-  useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        // Endpoint doesn't exist yet - skip backend call
-        setReviews(MOCK_REVIEWS);
-      } catch {
-        await fakeDelay(300);
-        setReviews(MOCK_REVIEWS);
-      } finally {
-        setLoading(false);
+  const fetchReviews = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get('/products/admin/all?limit=1000');
+      if (data.success && data.products) {
+        const allReviews = [];
+        data.products.forEach(product => {
+          if (product.reviews && product.reviews.length > 0) {
+            product.reviews.forEach(review => {
+              allReviews.push({
+                ...review,
+                _id: review._id || `${product._id}-${review.user}`,
+                product: { name: product.name, _id: product._id },
+              });
+            });
+          }
+        });
+        setReviews(allReviews);
       }
-    };
-    fetchReviews();
+    } catch (err) {
+      console.error('Error fetching reviews:', err);
+      toast.error('Failed to load reviews');
+      setReviews([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const handleDelete = async (productId, reviewId) => {
     if (!window.confirm('Delete this review?')) return;
-    setReviews(prev => prev.filter(r => r._id !== reviewId));
-    toast.success('Review deleted');
+    try {
+      await api.delete(`/products/${productId}/reviews/${reviewId}`);
+      setReviews(prev => prev.filter(r => r._id !== reviewId));
+      toast.success('Review deleted');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete review');
+    }
   };
 
   const filtered = reviews.filter(r => {
@@ -59,9 +73,14 @@ export default function Reviews() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-black text-gray-800">Reviews</h1>
-        <p className="text-sm text-gray-500">{reviews.length} total reviews · avg {avgRating} ★</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-black text-gray-800">Reviews</h1>
+          <p className="text-sm text-gray-500">{reviews.length} total reviews · avg {avgRating} ★</p>
+        </div>
+        <button onClick={fetchReviews} className="p-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition" title="Refresh">
+          <RefreshCw size={15} className={loading ? 'animate-spin text-orange-500' : 'text-gray-400'} />
+        </button>
       </div>
 
       {/* Summary Cards */}
