@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Heart, ShoppingCart, Star } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
+import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
 
   const discount = product.discountPrice && product.discountPrice < product.price
@@ -16,6 +19,11 @@ export default function ProductCard({ product }) {
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
+    if (!user) {
+      toast.error('Please login to add items to cart');
+      navigate('/login', { state: { from: `/product/${product._id}` } });
+      return;
+    }
     setAdding(true);
     try {
       await addToCart(product);
@@ -27,6 +35,11 @@ export default function ProductCard({ product }) {
 
   const handleWishlist = async (e) => {
     e.preventDefault();
+    if (!user) {
+      toast.error('Please login to add items to wishlist');
+      navigate('/login', { state: { from: `/product/${product._id}` } });
+      return;
+    }
     await toggleWishlist(product);
     toast.success(isInWishlist(product._id) ? 'Removed from wishlist' : 'Added to wishlist');
   };

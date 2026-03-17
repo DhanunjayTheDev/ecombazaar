@@ -28,7 +28,7 @@ export default function Register() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-3xl shadow-lg p-8">
           <Link to="/" className="block text-center mb-6">
-            <span className="text-2xl font-bold text-orange-500">Ecomb<span className="text-gray-800">azaar</span></span>
+            <span className="text-2xl font-bold text-orange-500">Ssdealsify</span>
           </Link>
           <h1 className="text-2xl font-bold text-gray-800 mb-1">Create Account</h1>
           <p className="text-gray-500 text-sm mb-6">Join thousands of happy shoppers</p>

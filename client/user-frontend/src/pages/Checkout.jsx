@@ -81,7 +81,7 @@ export default function Checkout() {
         key: RAZORPAY_KEY_ID,
         amount: rzpData.amount,
         currency: rzpData.currency,
-        name: 'EcomBazaar',
+        name: 'Ssdealsify',
         description: `Order of ${items.length} item(s)`,
         image: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=80&h=80&fit=crop',
         order_id: rzpData.orderId,

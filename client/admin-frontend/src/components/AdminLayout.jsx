@@ -29,8 +29,8 @@ export default function AdminLayout() {
   const Sidebar = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-gray-100">
-        <h1 className="text-xl font-black text-gray-800">Ecomb<span className="text-orange-500">azaar</span></h1>
+      <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-2">
+        <img src="/ssdealsify_logo.png" alt="Ssdealsify" className="h-10 w-auto object-contain" />
         <p className="text-xs text-gray-400 mt-0.5">Admin Panel</p>
       </div>
 

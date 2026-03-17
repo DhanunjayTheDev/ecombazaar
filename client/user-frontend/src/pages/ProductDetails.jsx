@@ -60,6 +60,11 @@ export default function ProductDetails() {
     : 0;
 
   const handleAddToCart = async () => {
+    if (!user) {
+      toast.error('Please login to add items to cart');
+      navigate('/login', { state: { from: `/product/${id}` } });
+      return;
+    }
     setAdding(true);
     try {
       await addToCart(product, qty);
@@ -223,7 +228,14 @@ export default function ProductDetails() {
               Buy Now
             </button>
             <button
-              onClick={() => toggleWishlist(product)}
+              onClick={() => {
+                if (!user) {
+                  toast.error('Please login to add items to wishlist');
+                  navigate('/login', { state: { from: `/product/${id}` } });
+                  return;
+                }
+                toggleWishlist(product);
+              }}
               className="w-12 h-12 border border-gray-200 rounded-full flex items-center justify-center hover:border-red-300 transition"
             >
               <Heart size={18} className={isInWishlist(product._id) ? 'fill-red-500 text-red-500' : 'text-gray-400'} />

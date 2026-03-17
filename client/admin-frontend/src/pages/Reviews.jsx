@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Star, Trash2, Search, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const Stars = ({ rating }) => (
   <div className="flex gap-0.5">
@@ -16,6 +17,7 @@ export default function Reviews() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, message: '', type: '', data: null, isLoading: false });
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -49,14 +51,21 @@ export default function Reviews() {
     fetchReviews();
   }, [fetchReviews]);
 
-  const handleDelete = async (productId, reviewId) => {
-    if (!window.confirm('Delete this review?')) return;
+  const handleDelete = (productId, reviewId) => {
+    setConfirmDialog({ isOpen: true, message: 'This review will be permanently deleted.', type: 'delete', data: { productId, reviewId }, isLoading: false });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { productId, reviewId } = confirmDialog.data;
+    setConfirmDialog(prev => ({ ...prev, isLoading: true }));
     try {
       await api.delete(`/products/${productId}/reviews/${reviewId}`);
       setReviews(prev => prev.filter(r => r._id !== reviewId));
-      toast.success('Review deleted');
+      toast.success('Review deleted successfully');
+      setConfirmDialog({ isOpen: false, message: '', type: '', data: null, isLoading: false });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete review');
+      setConfirmDialog(prev => ({ ...prev, isLoading: false }));
     }
   };
 

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Heart, ShoppingCart } from 'lucide-react';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useCart } from '../contexts/CartContext';
@@ -9,6 +9,7 @@ export default function Wishlist() {
   const { wishlist, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) return (
     <div className="max-w-4xl mx-auto px-4 py-20 text-center">
@@ -47,7 +48,15 @@ export default function Wishlist() {
               <Link to={`/product/${product._id}`} className="text-sm font-medium text-gray-800 line-clamp-2 hover:text-orange-500">{product.name}</Link>
               <p className="text-orange-500 font-bold mt-1 text-sm">₹{(product.discountPrice || product.price)?.toLocaleString()}</p>
               <button
-                onClick={async () => { await addToCart(product); toast.success('Added to cart!'); }}
+                onClick={async () => {
+                  if (!user) {
+                    toast.error('Please login to add items to cart');
+                    navigate('/login', { state: { from: '/wishlist' } });
+                    return;
+                  }
+                  await addToCart(product);
+                  toast.success('Added to cart!');
+                }}
                 className="w-full mt-2 bg-orange-500 text-white text-xs font-medium py-2 rounded-lg hover:bg-orange-600 transition flex items-center justify-center gap-1"
               >
                 <ShoppingCart size={12} /> Add to Cart

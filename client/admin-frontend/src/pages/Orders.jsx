@@ -105,7 +105,7 @@ function buildInvoiceHTML(order) {
   </style>
 </head><body>
   <div class="header">
-    <div><h1>EcomBazaar</h1><p style="margin:4px 0 0;color:#6b7280">Tax Invoice</p></div>
+    <div><h1>Ssdealsify</h1><p style="margin:4px 0 0;color:#6b7280">Tax Invoice</p></div>
     <div style="text-align:right">
       <p style="font-size:18px;font-weight:700;color:#111">#${String(order._id).slice(-8).toUpperCase()}</p>
       <p style="color:#6b7280;margin:2px 0">${date}</p>
@@ -160,7 +160,7 @@ function buildInvoiceHTML(order) {
     </table>
   </div>` : ''}
 
-  <div class="footer">Thank you for shopping with EcomBazaar · support@ecombazaar.com</div>
+  <div class="footer">Thank you for shopping with Ssdealsify · support@ssdealsify.in</div>
 </body></html>`;
 }
 

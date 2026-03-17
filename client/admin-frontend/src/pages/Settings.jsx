@@ -25,7 +25,7 @@ export default function Settings() {
   const [settings, setSettings] = useState(() => {
     const saved = localStorage.getItem('storeSettings');
     return saved ? JSON.parse(saved) : {
-      store: { name: 'EcomBazaar', tagline: 'Shop Smart, Live Better', email: 'support@ecombazaar.com', phone: '+91 98765 43210', address: '123 Market Street, Mumbai, India' },
+      store: { name: 'Ssdealsify', tagline: 'Shop Smart, Live Better', email: 'support@ssdealsify.in', phone: '+91 98765 43210', address: '123 Market Street, Mumbai, India' },
       tax: { enabled: true, rate: 10 },
       shipping: { freeAbove: 999, flatRate: 50 },
       payment: { cod: true, upi: true, card: false },

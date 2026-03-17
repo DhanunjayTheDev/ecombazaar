@@ -23,7 +23,7 @@ export default function OrderSuccess() {
         <CheckCircle size={48} className="text-green-500" />
       </div>
       <h1 className="text-3xl font-bold text-gray-800 mb-2">Order Placed Successfully!</h1>
-      <p className="text-gray-500 mb-2">Thank you for shopping with EcombAzaar</p>
+      <p className="text-gray-500 mb-2">Thank you for shopping with Ssdealsify</p>
       <p className="text-sm text-gray-400 mb-8">Order ID: <span className="font-mono font-medium text-gray-600">{id}</span></p>
 
       {/* Progress */}

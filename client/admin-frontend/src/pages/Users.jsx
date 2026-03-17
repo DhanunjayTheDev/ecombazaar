@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { Search, Ban, Trash2, ShieldCheck } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, message: '', type: '', data: null, isLoading: false });
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -40,16 +42,23 @@ export default function UserManagement() {
     }
   };
 
-  const deleteUser = async (id) => {
-    if (!window.confirm('Delete this user?')) return;
-    try { 
+  const deleteUser = (id) => {
+    setConfirmDialog({ isOpen: true, message: 'This user will be permanently deleted.', type: 'delete', data: { id }, isLoading: false });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { id } = confirmDialog.data;
+    setConfirmDialog(prev => ({ ...prev, isLoading: true }));
+    try {
       const { data } = await api.delete(`/users/${id}`);
       if (data.success) {
         setUsers(prev => prev.filter(u => u._id !== id));
         toast.success('User deleted successfully');
+        setConfirmDialog({ isOpen: false, message: '', type: '', data: null, isLoading: false });
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete user');
+      setConfirmDialog(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -119,6 +128,19 @@ export default function UserManagement() {
           </table>
         </div>
       </div>
+
+      {/* ── Confirm Dialog ──────────────────────────────────────────────────────── */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="Delete User?"
+        message={confirmDialog.message}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDangerous={true}
+        isLoading={confirmDialog.isLoading}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDialog({ isOpen: false, message: '', type: '', data: null, isLoading: false })}
+      />
     </div>
   );
 }

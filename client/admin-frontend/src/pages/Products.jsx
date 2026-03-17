@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, Search, X, Check, Image as ImageIcon, Sparkles, Lo
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import CustomSelect from '../components/CustomSelect';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 // ── Key Features Tag Input ─────────────────────────────────────────────────
 function KeyFeaturesInput({ value, onChange }) {
@@ -52,6 +53,7 @@ export default function Products() {
   const [imagePreviews, setImagePreviews] = useState([]);   // Cloudinary URLs
   const [imageUploading, setImageUploading] = useState(false);
   const [saving, setSaving]           = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, message: '', type: '', data: null, isLoading: false });
 
   const fetchData = useCallback(async () => {
     try {
@@ -127,17 +129,41 @@ export default function Products() {
     finally { setSaving(false); }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this product?')) return;
-    try { await api.delete(`/products/${id}`); setProducts(prev => prev.filter(p => p._id !== id)); toast.success('Deleted'); }
-    catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+  const handleDelete = (id) => {
+    setConfirmDialog({ isOpen: true, message: 'This product will be permanently deleted.', type: 'delete', data: { id }, isLoading: false });
   };
 
-  const handleBulkDelete = async () => {
-    if (!window.confirm(`Delete ${selected.length} products?`)) return;
-    await Promise.all(selected.map(id => api.delete(`/products/${id}`).catch(() => {})));
-    setProducts(prev => prev.filter(p => !selected.includes(p._id)));
-    setSelected([]); toast.success(`${selected.length} products deleted`);
+  const handleConfirmDelete = async () => {
+    const { id } = confirmDialog.data;
+    setConfirmDialog(prev => ({ ...prev, isLoading: true }));
+    try {
+      await api.delete(`/products/${id}`);
+      setProducts(prev => prev.filter(p => p._id !== id));
+      toast.success('Product deleted successfully');
+      setConfirmDialog({ isOpen: false, message: '', type: '', data: null, isLoading: false });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete product');
+      setConfirmDialog(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    setConfirmDialog({ isOpen: true, message: `All ${selected.length} selected products will be permanently deleted.`, type: 'bulkDelete', data: { ids: selected }, isLoading: false });
+  };
+
+  const handleConfirmBulkDelete = async () => {
+    const { ids } = confirmDialog.data;
+    setConfirmDialog(prev => ({ ...prev, isLoading: true }));
+    try {
+      await Promise.all(ids.map(id => api.delete(`/products/${id}`).catch(() => {})));
+      setProducts(prev => prev.filter(p => !ids.includes(p._id)));
+      setSelected([]);
+      toast.success(`${ids.length} products deleted successfully`);
+      setConfirmDialog({ isOpen: false, message: '', type: '', data: null, isLoading: false });
+    } catch (err) {
+      toast.error('Failed to delete some products');
+      setConfirmDialog(prev => ({ ...prev, isLoading: false }));
+    }
   };
 
   const filtered = products.filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase()));
@@ -226,6 +252,19 @@ export default function Products() {
           </table>
         </div>
       </div>
+
+      {/* ── Confirm Dialog ──────────────────────────────────────────────────────── */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.type === 'bulkDelete' ? 'Delete Products?' : 'Delete Product?'}
+        message={confirmDialog.message}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDangerous={true}
+        isLoading={confirmDialog.isLoading}
+        onConfirm={confirmDialog.type === 'bulkDelete' ? handleConfirmBulkDelete : handleConfirmDelete}
+        onCancel={() => setConfirmDialog({ isOpen: false, message: '', type: '', data: null, isLoading: false })}
+      />
 
       {/* ── Modal ──────────────────────────────────────────────────────── */}
       {modalOpen && (

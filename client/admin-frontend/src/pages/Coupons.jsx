@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const defaultForm = { code: '', discountType: 'percentage', discountValue: '', expiryDate: '', minOrderAmount: '', isActive: true };
 
@@ -11,6 +12,8 @@ export default function Coupons() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(defaultForm);
+  const [saving, setSaving] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, message: '', type: '', data: null, isLoading: false });
 
   const fetchCoupons = useCallback(async () => {
     try {
@@ -44,6 +47,7 @@ export default function Coupons() {
       toast.error('Please fill all required fields');
       return;
     }
+    setSaving(true);
     try {
       if (editing) {
         const { data } = await api.put(`/coupons/${editing._id}`, form);
@@ -58,22 +62,33 @@ export default function Coupons() {
           toast.success('Coupon created successfully');
         }
       }
+      setModalOpen(false);
+      setForm(defaultForm);
+      setEditing(null);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save coupon');
+    } finally {
+      setSaving(false);
     }
-    setModalOpen(false);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this coupon?')) return;
-    try { 
+  const handleDelete = (id) => {
+    setConfirmDialog({ isOpen: true, message: 'This coupon will be permanently deleted.', type: 'delete', data: { id }, isLoading: false });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { id } = confirmDialog.data;
+    setConfirmDialog(prev => ({ ...prev, isLoading: true }));
+    try {
       const { data } = await api.delete(`/coupons/${id}`);
       if (data.success) {
         setCoupons(prev => prev.filter(c => c._id !== id));
         toast.success('Coupon deleted successfully');
+        setConfirmDialog({ isOpen: false, message: '', type: '', data: null, isLoading: false });
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete coupon');
+      setConfirmDialog(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -84,7 +99,7 @@ export default function Coupons() {
           <h1 className="text-2xl font-black text-gray-800">Coupons</h1>
           <p className="text-sm text-gray-500">{coupons.length} active coupons</p>
         </div>
-        <button onClick={() => openModal()} className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-4 py-2 rounded-xl transition text-sm">
+        <button onClick={() => openModal()} className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-4 py-2 rounded-xl transition text-sm cursor-pointer">
           <Plus size={16} /> Add Coupon
         </button>
       </div>
@@ -105,10 +120,10 @@ export default function Coupons() {
                 <p>Expires: <strong>{new Date(coupon.expiryDate).toLocaleDateString('en-IN')}</strong></p>
               </div>
               <div className="flex gap-2 mt-4">
-                <button onClick={() => openModal(coupon)} className="flex-1 flex items-center justify-center gap-1 border border-gray-200 rounded-xl py-1.5 text-xs font-medium hover:border-orange-300 transition">
+                <button onClick={() => openModal(coupon)} className="flex-1 flex items-center justify-center gap-1 border border-gray-200 rounded-xl py-1.5 text-xs font-medium hover:border-orange-300 transition cursor-pointer">
                   <Edit2 size={12} /> Edit
                 </button>
-                <button onClick={() => handleDelete(coupon._id)} className="flex-1 flex items-center justify-center gap-1 border border-gray-200 rounded-xl py-1.5 text-xs font-medium hover:border-red-300 hover:text-red-500 transition">
+                <button onClick={() => handleDelete(coupon._id)} className="flex-1 flex items-center justify-center gap-1 border border-gray-200 rounded-xl py-1.5 text-xs font-medium hover:border-red-300 hover:text-red-500 transition cursor-pointer">
                   <Trash2 size={12} /> Delete
                 </button>
               </div>
@@ -117,12 +132,25 @@ export default function Coupons() {
         }
       </div>
 
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="Delete Coupon?"
+        message={confirmDialog.message}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDangerous={true}
+        isLoading={confirmDialog.isLoading}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDialog({ isOpen: false, message: '', type: '', data: null, isLoading: false })}
+      />
+
       {modalOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-bold text-gray-800">{editing ? 'Edit Coupon' : 'New Coupon'}</h2>
-              <button onClick={() => setModalOpen(false)}><X size={20} className="text-gray-400" /></button>
+              <button onClick={() => setModalOpen(false)} className="cursor-pointer"><X size={20} className="text-gray-400" /></button>
             </div>
             <form onSubmit={handleSave} className="space-y-3">
               <div>
@@ -154,8 +182,8 @@ export default function Coupons() {
                 <label htmlFor="couponActive" className="text-sm text-gray-700">Active</label>
               </div>
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setModalOpen(false)} className="flex-1 border border-gray-200 rounded-xl py-2 text-sm hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" className="flex-1 bg-orange-500 text-white rounded-xl py-2 text-sm hover:bg-orange-600 transition">{editing ? 'Update' : 'Create'}</button>
+                <button type="button" onClick={() => setModalOpen(false)} className="flex-1 border border-gray-200 rounded-xl py-2 text-sm hover:bg-gray-50 transition cursor-pointer\">Cancel</button>
+                <button type="submit" disabled={saving} className="flex-1 bg-orange-500 text-white rounded-xl py-2 text-sm hover:bg-orange-600 disabled:opacity-60 transition cursor-pointer\">{saving ? 'Saving...' : (editing ? 'Update' : 'Create')}</button>
               </div>
             </form>
           </div>

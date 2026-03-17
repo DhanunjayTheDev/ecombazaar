@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight, RefreshCw, ImageIcon, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const EMPTY_FORM = { name: '', image: '', description: '', isActive: true };
 
@@ -14,6 +15,7 @@ export default function Categories() {
   const [form, setForm]                 = useState(EMPTY_FORM);
   const [imgUploading, setImgUploading] = useState(false);
   const fileRef = useRef(null);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, message: '', type: '', data: null, isLoading: false });
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -69,13 +71,22 @@ export default function Categories() {
     } finally { setSaving(false); }
   };
 
-  const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete "${name}"? Products using this category won't be affected.`)) return;
+  const handleDelete = (id, name) => {
+    setConfirmDialog({ isOpen: true, message: `"${name}" will be deleted. Products using this category won't be affected.`, type: 'delete', data: { id }, isLoading: false });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { id } = confirmDialog.data;
+    setConfirmDialog(prev => ({ ...prev, isLoading: true }));
     try {
       await api.delete(`/categories/${id}`);
       setCategories(prev => prev.filter(c => c._id !== id));
-      toast.success('Category deleted');
-    } catch (err) { toast.error(err.response?.data?.message || 'Failed to delete'); }
+      toast.success('Category deleted successfully');
+      setConfirmDialog({ isOpen: false, message: '', type: '', data: null, isLoading: false });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete category');
+      setConfirmDialog(prev => ({ ...prev, isLoading: false }));
+    }
   };
 
   const handleToggle = async (cat) => {
@@ -152,6 +163,19 @@ export default function Categories() {
           ))}
         </div>
       )}
+
+      {/* ── Confirm Dialog ──────────────────────────────────────────────────────── */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="Delete Category?"
+        message={confirmDialog.message}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDangerous={true}
+        isLoading={confirmDialog.isLoading}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDialog({ isOpen: false, message: '', type: '', data: null, isLoading: false })}
+      />
 
       {/* Modal */}
       {modalOpen && (
