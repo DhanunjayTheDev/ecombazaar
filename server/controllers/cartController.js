@@ -13,7 +13,6 @@ const getPopulatedCart = async (userId) => {
 exports.getCart = async (req, res, next) => {
   try {
     const items = await getPopulatedCart(req.user._id);
-    console.log(`✅ [CART] Fetched for user: ${req.user._id} (${items.length} items)`);
     res.json({ success: true, cart: { items } });
   } catch (err) { next(err); }
 };
@@ -33,10 +32,8 @@ exports.addToCart = async (req, res, next) => {
 
     if (idx > -1) {
       user.cart[idx].quantity += Number(quantity);
-      console.log(`✅ [CART] Updated qty: ${productId} → ${user.cart[idx].quantity}`);
     } else {
       user.cart.push({ product: productId, quantity: Number(quantity), price });
-      console.log(`✅ [CART] Added: ${productId} (qty: ${quantity})`);
     }
     await user.save();
     const items = await getPopulatedCart(req.user._id);
@@ -55,10 +52,8 @@ exports.updateCart = async (req, res, next) => {
 
     if (Number(quantity) <= 0) {
       user.cart.splice(idx, 1);
-      console.log(`✅ [CART] Removed: ${productId}`);
     } else {
       user.cart[idx].quantity = Number(quantity);
-      console.log(`✅ [CART] Updated qty: ${productId} → ${quantity}`);
     }
     await user.save();
     const items = await getPopulatedCart(req.user._id);
@@ -85,7 +80,6 @@ exports.removeFromCart = async (req, res, next) => {
 exports.clearCart = async (req, res, next) => {
   try {
     await User.findByIdAndUpdate(req.user._id, { cart: [] });
-    console.log(`✅ [CART] Cleared for user: ${req.user._id}`);
     res.json({ success: true, message: 'Cart cleared' });
   } catch (err) { next(err); }
 };

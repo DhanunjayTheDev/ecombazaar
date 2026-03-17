@@ -30,7 +30,6 @@ exports.createCategory = async (req, res, next) => {
     const existing = await Category.findOne({ name: name.trim() });
     if (existing) return res.status(400).json({ message: 'Category with this name already exists' });
     const category = await Category.create({ name: name.trim(), description, icon, image, isActive });
-    console.log(`✅ [CATEGORY] Created: ${category.name}`);
     res.status(201).json({ success: true, category });
   } catch (err) { next(err); }
 };
@@ -48,7 +47,6 @@ exports.updateCategory = async (req, res, next) => {
     if (image !== undefined) category.image = image;
     if (isActive !== undefined) category.isActive = isActive;
     await category.save();
-    console.log(`✅ [CATEGORY] Updated: ${category.name}`);
     res.json({ success: true, category });
   } catch (err) { next(err); }
 };
@@ -59,7 +57,6 @@ exports.deleteCategory = async (req, res, next) => {
   try {
     const category = await Category.findByIdAndDelete(req.params.id);
     if (!category) return res.status(404).json({ message: 'Category not found' });
-    console.log(`✅ [CATEGORY] Deleted: ${category.name}`);
     res.json({ success: true, message: 'Category deleted' });
   } catch (err) { next(err); }
 };

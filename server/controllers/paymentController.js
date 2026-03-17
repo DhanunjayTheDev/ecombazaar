@@ -28,8 +28,6 @@ exports.createRazorpayOrder = async (req, res, next) => {
     };
 
     const order = await getRazorpay().orders.create(options);
-    console.log(`✅ [PAYMENT] Razorpay order created: ${order.id} (Amount: ₹${amount})`);
-    
     res.json({ success: true, orderId: order.id, amount: order.amount, currency: order.currency });
   } catch (err) {
     console.error('Razorpay order creation error:', err);
@@ -134,8 +132,6 @@ exports.createOrderAfterPayment = async (req, res, next) => {
 
     // Clear embedded cart
     await User.findByIdAndUpdate(req.user._id, { cart: [] });
-
-    console.log(`✅ [ORDER] Created after payment: ${order._id} (Amount: ₹${totalAmount})`);
     res.status(201).json({ success: true, order });
   } catch (err) {
     console.error('Order creation error:', err);

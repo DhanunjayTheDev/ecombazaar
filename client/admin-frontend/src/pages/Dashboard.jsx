@@ -87,7 +87,6 @@ export default function Dashboard() {
           setStats(newStats);
         }
       } catch (err) {
-        console.error('Dashboard error:', err);
         toast.error('Failed to load dashboard data');
       } finally {
         setLoading(false);
@@ -106,7 +105,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard icon={TrendingUp} title="Total Revenue" value={`₹${(stats.totalRevenue / 1000).toFixed(0)}K`} subtitle="Lifetime earnings" color="bg-orange-500" />
         <StatCard icon={ShoppingBag} title="Total Orders" value={stats.totalOrders} subtitle="All time" color="bg-blue-500" />
         <StatCard icon={Users} title="Users" value={stats.totalUsers} subtitle="Registered" color="bg-purple-500" />

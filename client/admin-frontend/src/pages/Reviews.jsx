@@ -39,7 +39,6 @@ export default function Reviews() {
         setReviews(allReviews);
       }
     } catch (err) {
-      console.error('Error fetching reviews:', err);
       toast.error('Failed to load reviews');
       setReviews([]);
     } finally {

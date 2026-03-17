@@ -1,4 +1,4 @@
-﻿# EcomBazaar — Full-Stack E-Commerce Platform
+﻿# SSDealsify — Full-Stack E-Commerce Platform
 
 A production-ready e-commerce system with a **User Frontend**, **Admin Panel**, and **Node.js/Express/MongoDB Backend**.
 
@@ -7,7 +7,7 @@ A production-ready e-commerce system with a **User Frontend**, **Admin Panel**, 
 ## Project Structure
 
 ```
-ecombazaar/
+ssdealsify/
  server/               # Backend API (Express + MongoDB)
  client/
     user-frontend/    # User-facing shop (React + Vite, port 5173)

@@ -20,7 +20,6 @@ export default function UserManagement() {
         setUsers([]);
       }
     } catch (err) {
-      console.error('Error fetching users:', err);
       toast.error('Failed to load users');
       setUsers([]);
     } finally { 

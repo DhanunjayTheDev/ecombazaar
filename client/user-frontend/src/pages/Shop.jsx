@@ -34,7 +34,6 @@ export default function Shop() {
       setTotal(data.total);
       setPages(data.pages);
     } catch (err) {
-      console.error('Error fetching products:', err);
       setProducts([]);
       setTotal(0);
       setPages(1);

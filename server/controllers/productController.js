@@ -57,7 +57,6 @@ exports.createProduct = async (req, res, next) => {
     const { keyFeatures } = req.body;
     const parsedKeyFeatures = typeof keyFeatures === 'string' ? JSON.parse(keyFeatures) : keyFeatures || [];
     const product = await Product.create({ ...req.body, images, keyFeatures: parsedKeyFeatures });
-    console.log(`✅ [PRODUCT] Created: ${product.name} (ID: ${product._id})`);
     res.status(201).json({ success: true, product });
   } catch (err) { next(err); }
 };
@@ -138,7 +137,6 @@ exports.deleteReview = async (req, res, next) => {
       : 0;
     
     await product.save();
-    console.log(`✅ [REVIEW] Deleted from product: ${product.name}`);
     res.json({ success: true, message: 'Review deleted successfully', product });
   } catch (err) { next(err); }
 };

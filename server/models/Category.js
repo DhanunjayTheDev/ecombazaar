@@ -12,11 +12,10 @@ const categorySchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Auto-generate slug from name before saving
-categorySchema.pre('save', function (next) {
+categorySchema.pre('save', async function () {
   if (this.isModified('name') || !this.slug) {
     this.slug = toSlug(this.name);
   }
-  next();
 });
 
 module.exports = mongoose.model('Category', categorySchema);

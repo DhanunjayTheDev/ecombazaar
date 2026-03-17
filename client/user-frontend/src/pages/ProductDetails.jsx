@@ -34,7 +34,7 @@ export default function ProductDetails() {
         const { data } = await api.get(`/products/${id}`);
         setProduct(data.product);
       } catch (err) {
-        console.error('Error fetching product:', err);
+
         toast.error('Failed to load product');
         setProduct(null);
       } finally { setLoading(false); }

@@ -268,9 +268,10 @@ export default function Products() {
 
       {/* ── Modal ──────────────────────────────────────────────────────── */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl w-full max-w-2xl my-6 shadow-2xl">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            {/* Fixed Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-orange-100 rounded-xl flex items-center justify-center">
                   <Sparkles size={15} className="text-orange-500" />
@@ -280,9 +281,9 @@ export default function Products() {
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-100 rounded-xl transition"><X size={18} /></button>
             </div>
 
-            <form onSubmit={handleSave} className="p-6 space-y-6">
-              {/* Basic Info */}
-              <div>
+            {/* Scrollable Content */}
+            <form id="product-form" onSubmit={handleSave} className="overflow-y-auto flex-1">
+              <div className="space-y-6 p-6">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Basic Information</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="sm:col-span-2">
@@ -300,88 +301,89 @@ export default function Products() {
                       className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="e.g. Sony, Apple…" />
                   </div>
                 </div>
-              </div>
 
-              {/* Pricing */}
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Pricing & Inventory</p>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">MRP (₹) <span className="text-red-400">*</span></label>
-                    <input type="number" required min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="0" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">Sale Price (₹)</label>
-                    <input type="number" min="0" value={form.discountPrice} onChange={e => setForm(f => ({ ...f, discountPrice: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="0" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">Stock Qty <span className="text-red-400">*</span></label>
-                    <input type="number" required min="0" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="0" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Description</p>
-                <textarea required rows={4} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition resize-none"
-                  placeholder="Describe the product in detail…" />
-              </div>
-
-              {/* Key Features */}
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Key Features</p>
-                <KeyFeaturesInput value={form.keyFeatures} onChange={v => setForm(f => ({ ...f, keyFeatures: v }))} />
-              </div>
-
-              {/* Images */}
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Product Images</p>
-                <div className="flex flex-wrap gap-3">
-                  {imagePreviews.map((src, i) => (
-                    <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 group">
-                      <img src={src} alt="" className="w-full h-full object-cover" />
-                      <button type="button" onClick={() => removePreview(i)}
-                        className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                        <X size={10} />
-                      </button>
-                    </div>
-                  ))}
-                  <label className={`w-20 h-20 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition ${imageUploading ? 'border-orange-300 bg-orange-50 cursor-wait' : 'border-gray-200 cursor-pointer hover:border-orange-400 hover:bg-orange-50'}`}>
-                    {imageUploading
-                      ? <Loader2 size={18} className="text-orange-500 animate-spin" />
-                      : <><ImageIcon size={18} className="text-gray-400" /><span className="text-xs text-gray-400">Add</span></>
-                    }
-                    <input type="file" multiple accept="image/*" onChange={handleImages} className="hidden" disabled={imageUploading} />
-                  </label>
-                </div>
-                <p className="text-xs text-gray-400 mt-2">Uploaded to Cloudinary · Max 8 images, 5 MB each (JPG, PNG, WebP)</p>
-              </div>
-
-              {/* Status Toggle */}
-              <label className="flex items-center gap-3 cursor-pointer">
-                <div onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
-                  className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors shrink-0 ${form.isActive ? 'bg-orange-500' : 'bg-gray-200'}`}>
-                  <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${form.isActive ? 'translate-x-5' : 'translate-x-0'}`} />
-                </div>
+                {/* Pricing */}
                 <div>
-                  <span className="text-sm font-medium text-gray-700">Active product</span>
-                  <p className="text-xs text-gray-400">Visible to customers in the store</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Pricing & Inventory</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">MRP (₹) <span className="text-red-400">*</span></label>
+                      <input type="number" required min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="0" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Sale Price (₹)</label>
+                      <input type="number" min="0" value={form.discountPrice} onChange={e => setForm(f => ({ ...f, discountPrice: e.target.value }))}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="0" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Stock Qty <span className="text-red-400">*</span></label>
+                      <input type="number" required min="0" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="0" />
+                    </div>
+                  </div>
                 </div>
-              </label>
 
-              <div className="flex gap-3 pt-1">
-                <button type="button" onClick={closeModal} className="flex-1 border border-gray-200 rounded-xl py-2.5 text-sm font-medium hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" disabled={saving || imageUploading}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white rounded-xl py-2.5 text-sm font-bold transition">
-                  {saving ? 'Saving…' : imageUploading ? 'Uploading images…' : editing ? 'Update Product' : 'Create Product'}
-                </button>
+                {/* Description */}
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Description</p>
+                  <textarea required rows={4} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition resize-none"
+                    placeholder="Describe the product in detail…" />
+                </div>
+
+                {/* Key Features */}
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Key Features</p>
+                  <KeyFeaturesInput value={form.keyFeatures} onChange={v => setForm(f => ({ ...f, keyFeatures: v }))} />
+                </div>
+
+                {/* Images */}
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Product Images</p>
+                  <div className="flex flex-wrap gap-3">
+                    {imagePreviews.map((src, i) => (
+                      <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 group">
+                        <img src={src} alt="" className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => removePreview(i)}
+                          className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                          <X size={10} />
+                        </button>
+                      </div>
+                    ))}
+                    <label className={`w-20 h-20 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition ${imageUploading ? 'border-orange-300 bg-orange-50 cursor-wait' : 'border-gray-200 cursor-pointer hover:border-orange-400 hover:bg-orange-50'}`}>
+                      {imageUploading
+                        ? <Loader2 size={18} className="text-orange-500 animate-spin" />
+                        : <><ImageIcon size={18} className="text-gray-400" /><span className="text-xs text-gray-400">Add</span></>
+                      }
+                      <input type="file" multiple accept="image/*" onChange={handleImages} className="hidden" disabled={imageUploading} />
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">Uploaded to Cloudinary · Max 8 images, 5 MB each (JPG, PNG, WebP)</p>
+                </div>
+
+                {/* Status Toggle */}
+                <label className="flex items-center gap-3 cursor-pointer pb-3">
+                  <div onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
+                    className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors shrink-0 ${form.isActive ? 'bg-orange-500' : 'bg-gray-200'}`}>
+                    <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${form.isActive ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Active product</span>
+                    <p className="text-xs text-gray-400">Visible to customers in the store</p>
+                  </div>
+                </label>
               </div>
             </form>
+
+            {/* Fixed Footer */}
+            <div className="border-t border-gray-100 p-6 flex gap-3 shrink-0 bg-gray-50/50">
+              <button type="button" onClick={closeModal} className="flex-1 border border-gray-200 rounded-xl py-2.5 text-sm font-medium hover:bg-gray-100 transition">Cancel</button>
+              <button type="submit" form="product-form" disabled={saving || imageUploading}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white rounded-xl py-2.5 text-sm font-bold transition">
+                {saving ? 'Saving…' : imageUploading ? 'Uploading images…' : editing ? 'Update Product' : 'Create Product'}
+              </button>
+            </div>
           </div>
         </div>
       )}

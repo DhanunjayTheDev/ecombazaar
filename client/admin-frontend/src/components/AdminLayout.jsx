@@ -5,6 +5,7 @@ import {
   Ticket, BarChart2, Settings, LogOut, Menu, X, ChevronRight,
 } from 'lucide-react';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
+import logo from '../assets/ssdealsify_logo.png';
 
 const navItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
@@ -30,8 +31,7 @@ export default function AdminLayout() {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-2">
-        <img src="/ssdealsify_logo.png" alt="Ssdealsify" className="h-10 w-auto object-contain" />
-        <p className="text-xs text-gray-400 mt-0.5">Admin Panel</p>
+        <img src={logo} alt="Ssdealsify" className="h-10 w-auto object-contain" />
       </div>
 
       {/* Nav */}

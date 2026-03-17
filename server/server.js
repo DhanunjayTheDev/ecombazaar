@@ -1,7 +1,9 @@
+const dotenv = require('dotenv');
+dotenv.config(); // Must be first — loads env vars before anything else uses them
+
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const dotenv = require('dotenv');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
@@ -17,7 +19,6 @@ const couponRoutes = require('./routes/couponRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 
-dotenv.config();
 connectDB();
 
 const app = express();

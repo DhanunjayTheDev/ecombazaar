@@ -25,7 +25,6 @@ export default function Coupons() {
         setCoupons([]);
       }
     } catch (err) {
-      console.error('Error fetching coupons:', err);
       toast.error('Failed to load coupons');
       setCoupons([]);
     } finally { 
@@ -182,8 +181,8 @@ export default function Coupons() {
                 <label htmlFor="couponActive" className="text-sm text-gray-700">Active</label>
               </div>
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setModalOpen(false)} className="flex-1 border border-gray-200 rounded-xl py-2 text-sm hover:bg-gray-50 transition cursor-pointer\">Cancel</button>
-                <button type="submit" disabled={saving} className="flex-1 bg-orange-500 text-white rounded-xl py-2 text-sm hover:bg-orange-600 disabled:opacity-60 transition cursor-pointer\">{saving ? 'Saving...' : (editing ? 'Update' : 'Create')}</button>
+                <button type="button" onClick={() => setModalOpen(false)} className="flex-1 border border-gray-200 rounded-xl py-2 text-sm hover:bg-gray-50 transition cursor-pointer">Cancel</button>
+                <button type="submit" disabled={saving} className="flex-1 bg-orange-500 text-white rounded-xl py-2 text-sm hover:bg-orange-600 disabled:opacity-60 transition cursor-pointer">{saving ? 'Saving...' : (editing ? 'Update' : 'Create')}</button>
               </div>
             </form>
           </div>

@@ -36,7 +36,6 @@ export const CartProvider = ({ children }) => {
         setItems([]);
       }
     } catch (err) {
-      console.error('Error fetching cart:', err);
       setItems([]);
     } finally { 
       setLoading(false);
@@ -75,7 +74,6 @@ export const CartProvider = ({ children }) => {
         setItems(data.cart.items);
       }
     } catch (err) {
-      console.error('Error adding to cart:', err);
       throw err;
     }
   };
@@ -102,7 +100,6 @@ export const CartProvider = ({ children }) => {
         setItems(data.cart.items);
       }
     } catch (err) {
-      console.error('Error updating cart:', err);
       throw err;
     }
   };
@@ -121,7 +118,6 @@ export const CartProvider = ({ children }) => {
         setItems(data.cart.items);
       }
     } catch (err) {
-      console.error('Error removing from cart:', err);
       throw err;
     }
   };
@@ -136,7 +132,7 @@ export const CartProvider = ({ children }) => {
     try {
       await api.delete('/cart/clear');
     } catch (err) {
-      console.error('Error clearing cart:', err);
+      // Silent fail on clear
     }
   };
 

@@ -14,6 +14,7 @@ export default function Categories() {
   const [editing, setEditing]           = useState(null);
   const [form, setForm]                 = useState(EMPTY_FORM);
   const [imgUploading, setImgUploading] = useState(false);
+  const [fileToUpload, setFileToUpload] = useState(null); // Store file temporarily
   const fileRef = useRef(null);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, message: '', type: '', data: null, isLoading: false });
 
@@ -33,21 +34,19 @@ export default function Categories() {
     setForm(cat
       ? { name: cat.name, image: cat.image || '', description: cat.description || '', isActive: cat.isActive }
       : EMPTY_FORM);
+    setFileToUpload(null); // Reset file
     setModalOpen(true);
   };
 
-  // Upload selected image to Cloudinary via /api/upload, store URL in form.image
+  // Just store the file, don't upload yet. Show local preview.
   const handleImageSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setImgUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append('image', file);
-      const { data } = await api.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      if (data.success) { setForm(f => ({ ...f, image: data.url })); toast.success('Image uploaded'); }
-    } catch { toast.error('Image upload failed'); }
-    finally { setImgUploading(false); if (fileRef.current) fileRef.current.value = ''; }
+    // Create local preview URL
+    const preview = URL.createObjectURL(file);
+    setForm(f => ({ ...f, image: preview }));
+    setFileToUpload(file); // Store file for upload on save
+    if (fileRef.current) fileRef.current.value = '';
   };
 
   const handleSave = async (e) => {
@@ -55,7 +54,23 @@ export default function Categories() {
     if (!form.name.trim()) return toast.error('Category name is required');
     setSaving(true);
     try {
-      const payload = { name: form.name, image: form.image, description: form.description, isActive: form.isActive };
+      let imageUrl = form.image; // Use existing image or preview
+      
+      // Only upload if a new file was selected
+      if (fileToUpload) {
+        setImgUploading(true);
+        const fd = new FormData();
+        fd.append('image', fileToUpload);
+        const { data } = await api.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        if (data.success) {
+          imageUrl = data.url;
+          toast.success('Image uploaded');
+        } else {
+          throw new Error('Image upload failed');
+        }
+      }
+      
+      const payload = { name: form.name, image: imageUrl, description: form.description, isActive: form.isActive };
       if (editing) {
         const { data } = await api.put(`/categories/${editing._id}`, payload);
         setCategories(prev => prev.map(c => c._id === editing._id ? data.category : c));
@@ -66,9 +81,10 @@ export default function Categories() {
         toast.success('Category created');
       }
       setModalOpen(false);
+      setFileToUpload(null);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to save category');
-    } finally { setSaving(false); }
+      toast.error(err.response?.data?.message || err.message || 'Failed to save category');
+    } finally { setSaving(false); setImgUploading(false); }
   };
 
   const handleDelete = (id, name) => {

@@ -19,7 +19,6 @@ export default function Home() {
         const { data } = await api.get('/products?limit=8');
         setFeatured(data.products);
       } catch (err) {
-        console.error('Error fetching products:', err);
         setFeatured([]);
       } finally { setLoading(false); }
     };
@@ -35,7 +34,6 @@ export default function Home() {
           setCategories(data.categories.slice(0, 7));
         }
       } catch (err) {
-        console.error('Error fetching categories:', err);
         setCategories([]);
       }
     };
@@ -65,7 +63,6 @@ export default function Home() {
           setTestimonials(allReviews.slice(0, 3));
         }
       } catch (err) {
-        console.error('Error fetching testimonials:', err);
         setTestimonials([]);
       }
     };

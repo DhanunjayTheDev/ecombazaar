@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/ecombazaar';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/ssdealsify';
 
 // Import models
 const User = require('../models/User');

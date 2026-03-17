@@ -47,7 +47,6 @@ export default function Analytics() {
           }
         }
       } catch (err) {
-        console.error('Analytics error:', err);
         toast.error('Failed to load analytics data');
       } finally {
         setLoading(false);
