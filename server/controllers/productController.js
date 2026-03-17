@@ -48,15 +48,11 @@ exports.getProductById = async (req, res, next) => {
 // @route POST /api/products
 exports.createProduct = async (req, res, next) => {
   try {
-    // Images arrive as URL strings uploaded to Cloudinary by the frontend
-    const images = Array.isArray(req.body.images)
-      ? req.body.images
-      : req.body.images
-        ? [req.body.images]
-        : [];
-    const { keyFeatures } = req.body;
-    const parsedKeyFeatures = typeof keyFeatures === 'string' ? JSON.parse(keyFeatures) : keyFeatures || [];
-    const product = await Product.create({ ...req.body, images, keyFeatures: parsedKeyFeatures });
+    const images = Array.isArray(req.body.images) ? req.body.images : req.body.images ? [req.body.images] : [];
+    const keyFeatures = typeof req.body.keyFeatures === 'string' ? JSON.parse(req.body.keyFeatures) : req.body.keyFeatures || [];
+    const variants    = typeof req.body.variants    === 'string' ? JSON.parse(req.body.variants)    : req.body.variants    || [];
+    const specifications = typeof req.body.specifications === 'string' ? JSON.parse(req.body.specifications) : req.body.specifications || {};
+    const product = await Product.create({ ...req.body, images, keyFeatures, variants, specifications });
     res.status(201).json({ success: true, product });
   } catch (err) { next(err); }
 };

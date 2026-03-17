@@ -29,17 +29,31 @@ const STATUS_DOT = {
 // Compact status badge + dropdown for the orders table
 function StatusDropdown({ value, onChange }) {
   const [open, setOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const ref = useRef(null);
+  
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  const handleOpen = () => {
+    setOpen(o => !o);
+    if (!open && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + 4,
+        left: rect.left,
+      });
+    }
+  };
+
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={handleOpen}
         className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer select-none ${
           STATUS_COLORS[value] || 'bg-gray-100 text-gray-600 border-gray-200'
         }`}
@@ -48,7 +62,10 @@ function StatusDropdown({ value, onChange }) {
         <ChevronDown size={10} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="absolute z-50 left-0 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden">
+        <div 
+          className="fixed z-50 w-36 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden"
+          style={{ top: `${dropdownPos.top}px`, left: `${dropdownPos.left}px` }}
+        >
           {STATUS_OPTIONS.map(s => (
             <button
               key={s}
@@ -491,8 +508,8 @@ export default function Orders() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-white rounded-2xl border border-gray-100">
+        <div className="overflow-x-auto overflow-y-visible rounded-2xl">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
@@ -527,7 +544,7 @@ export default function Orders() {
                   <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
                     {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}
                   </td>
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                  <td className="px-4 py-3 overflow-visible relative" onClick={e => e.stopPropagation()}>
                     <StatusDropdown value={order.status} onChange={s => updateStatus(order._id, s)} />
                   </td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>

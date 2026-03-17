@@ -8,22 +8,32 @@ const reviewSchema = new mongoose.Schema({
   images: [{ type: String }], // Images uploaded with review
 }, { timestamps: true });
 
-const productSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  category: { type: String, required: true },
-  price: { type: Number, required: true, min: 0 },
+const variantSchema = new mongoose.Schema({
+  label:         { type: String, required: true },   // e.g. "128GB", "8GB RAM / 512GB SSD"
+  price:         { type: Number, required: true, min: 0 },
   discountPrice: { type: Number, default: 0 },
-  images: [{ type: String }],
-  description: { type: String, required: true },
-  keyFeatures: [{ type: String }], // Array of key features/highlights
-  specifications: { type: Map, of: String },
-  stock: { type: Number, required: true, default: 0 },
-  rating: { type: Number, default: 0, min: 0, max: 5 },
-  numReviews: { type: Number, default: 0 },
-  reviews: [reviewSchema],
-  isActive: { type: Boolean, default: true },
-  tags: [String],
-  brand: String,
+  stock:         { type: Number, required: true, default: 0 },
+  sku:           { type: String, default: '' },
+}, { _id: false });
+
+const productSchema = new mongoose.Schema({
+  name:          { type: String, required: true, trim: true },
+  category:      { type: String, required: true },
+  productType:   { type: String, default: '' },  // e.g. 'Pendrive', 'Laptop', 'Smartwatch'
+  brand:         String,
+  price:         { type: Number, required: true, min: 0 },
+  discountPrice: { type: Number, default: 0 },
+  images:        [{ type: String }],
+  description:   { type: String, required: true },
+  keyFeatures:   [{ type: String }],
+  specifications: { type: Map, of: String },  // Dynamic tech specs
+  variants:      [variantSchema],              // Size / storage / color variants
+  stock:         { type: Number, required: true, default: 0 },
+  rating:        { type: Number, default: 0, min: 0, max: 5 },
+  numReviews:    { type: Number, default: 0 },
+  reviews:       [reviewSchema],
+  isActive:      { type: Boolean, default: true },
+  tags:          [String],
 }, { timestamps: true });
 
 // Full-text search index

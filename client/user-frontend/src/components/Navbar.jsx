@@ -3,11 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Heart, User, Search, Menu, X, Package } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
+import { useWishlist } from '../contexts/WishlistContext';
 import logo from '../assets/ssdealsify_logo.png';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { itemCount } = useCart();
+  const { wishlist } = useWishlist();
+  const wishlistCount = wishlist.length;
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -67,11 +70,25 @@ export default function Navbar() {
             Shop
           </Link>
 
+          {user && (
+            <Link
+              to="/orders"
+              className="text-gray-700 hover:text-orange-500 font-medium transition flex items-center gap-1"
+            >
+              <Package size={16} /> My Orders
+            </Link>
+          )}
+
           <Link
             to="/wishlist"
-            className="text-gray-700 hover:text-orange-500 transition"
+            className="relative text-gray-700 hover:text-orange-500 transition"
           >
             <Heart size={22} />
+            {wishlistCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                {wishlistCount}
+              </span>
+            )}
           </Link>
 
           <Link
@@ -137,13 +154,23 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          onClick={() => setMenuOpen((m) => !m)}
-          className="md:hidden text-gray-700"
-        >
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        {/* Mobile: Cart + Hamburger */}
+        <div className="md:hidden flex items-center gap-2">
+          <Link to="/cart" className="relative text-gray-700 hover:text-orange-500 transition p-1">
+            <ShoppingCart size={22} />
+            {itemCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold leading-none">
+                {itemCount}
+              </span>
+            )}
+          </Link>
+          <button
+            onClick={() => setMenuOpen((m) => !m)}
+            className="text-gray-700"
+          >
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
@@ -172,6 +199,16 @@ export default function Navbar() {
           >
             Shop
           </Link>
+
+          {user && (
+            <Link
+              to="/orders"
+              className="text-gray-700 font-medium py-1"
+              onClick={() => setMenuOpen(false)}
+            >
+              My Orders
+            </Link>
+          )}
 
           <Link
             to="/cart"

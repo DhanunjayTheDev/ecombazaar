@@ -13,9 +13,8 @@ export const WishlistProvider = ({ children }) => {
     if (!user) { setWishlist([]); return; }
     api.get('/auth/profile')
       .then(({ data }) => {
-        // wishlist is array of populated product objects
-        const ids = (data.user?.wishlist || []).map(p => p._id || p);
-        setWishlist(ids);
+        // Store full populated product objects
+        setWishlist(data.user?.wishlist || []);
       })
       .catch(() => setWishlist([]));
   }, [user]);
@@ -24,18 +23,25 @@ export const WishlistProvider = ({ children }) => {
     if (!user) return false;
     try {
       const { data } = await api.put(`/auth/wishlist/${product._id}`);
-      // backend returns array of ObjectId strings
+      // backend returns array of ObjectId strings — use them to sync local state
       const ids = data.wishlist.map(id => id.toString ? id.toString() : id);
-      setWishlist(ids);
-      return ids.includes(product._id.toString());
+      const isNowIn = ids.includes(product._id.toString());
+      setWishlist(prev => {
+        if (isNowIn) {
+          const exists = prev.some(p => (p._id || p).toString() === product._id.toString());
+          return exists ? prev : [...prev, product];
+        }
+        return prev.filter(p => (p._id || p).toString() !== product._id.toString());
+      });
+      return isNowIn;
     } catch { return false; }
   }, [user]);
 
   const isInWishlist = (productId) => {
     const pid = productId?.toString ? productId.toString() : productId;
-    return wishlist.some(id => {
-      const wid = id?._id ? id._id.toString() : id?.toString ? id.toString() : id;
-      return wid === pid;
+    return wishlist.some(item => {
+      const id = item?._id ? item._id.toString() : item?.toString ? item.toString() : item;
+      return id === pid;
     });
   };
 

@@ -39,7 +39,193 @@ function KeyFeaturesInput({ value, onChange }) {
   );
 }
 
-const emptyForm = { name: '', category: '', brand: '', price: '', discountPrice: '', stock: '', description: '', keyFeatures: [], isActive: true };
+// ── Product Type → Spec Fields Config ──────────────────────────────────────
+const PRODUCT_SPECS = {
+  'Pendrive / Flash Drive': [
+    { key: 'capacity',      label: 'Storage Capacity', type: 'select', options: ['8GB','16GB','32GB','64GB','128GB','256GB','512GB','1TB'] },
+    { key: 'usbVersion',    label: 'USB Interface',    type: 'select', options: ['USB 2.0','USB 3.0','USB 3.1 Gen 1','USB 3.1 Gen 2','USB 3.2','USB-C','Dual (USB-A + C)'] },
+    { key: 'readSpeed',     label: 'Read Speed',       type: 'text', placeholder: 'e.g. 150 MB/s' },
+    { key: 'writeSpeed',    label: 'Write Speed',      type: 'text', placeholder: 'e.g. 70 MB/s' },
+    { key: 'compatibility', label: 'Compatibility',    type: 'text', placeholder: 'e.g. Windows, Mac, Linux' },
+    { key: 'warranty',      label: 'Warranty',         type: 'text', placeholder: 'e.g. 2 Years' },
+  ],
+  'SD Card / Memory Card': [
+    { key: 'capacity',      label: 'Storage Capacity', type: 'select', options: ['16GB','32GB','64GB','128GB','256GB','512GB','1TB'] },
+    { key: 'cardType',      label: 'Card Type',        type: 'select', options: ['SD','SDHC','SDXC','microSD','microSDHC','microSDXC'] },
+    { key: 'speedClass',    label: 'Speed Class',      type: 'select', options: ['Class 4','Class 6','Class 10','UHS-I (U1)','UHS-I (U3)','UHS-II','V30','V60','V90'] },
+    { key: 'readSpeed',     label: 'Read Speed',       type: 'text', placeholder: 'e.g. 100 MB/s' },
+    { key: 'writeSpeed',    label: 'Write Speed',      type: 'text', placeholder: 'e.g. 60 MB/s' },
+    { key: 'compatibility', label: 'Compatible With',  type: 'text', placeholder: 'e.g. Camera, Drone, Phone' },
+  ],
+  'Laptop': [
+    { key: 'processor', label: 'Processor',         type: 'text',   placeholder: 'e.g. Intel Core i5-12th Gen' },
+    { key: 'ram',       label: 'RAM',               type: 'select', options: ['4GB','8GB','12GB','16GB','32GB','64GB'] },
+    { key: 'storage',   label: 'Storage',           type: 'text',   placeholder: 'e.g. 512GB SSD + 1TB HDD' },
+    { key: 'display',   label: 'Display',           type: 'text',   placeholder: 'e.g. 15.6" FHD IPS 144Hz' },
+    { key: 'graphics',  label: 'Graphics Card',     type: 'text',   placeholder: 'e.g. NVIDIA GTX 1650 4GB' },
+    { key: 'os',        label: 'Operating System',  type: 'select', options: ['Windows 11 Home','Windows 11 Pro','Windows 10','macOS','Linux','Chrome OS','Without OS'] },
+    { key: 'battery',   label: 'Battery Life',      type: 'text',   placeholder: 'e.g. 56Wh, Up to 8 hrs' },
+    { key: 'weight',    label: 'Weight',            type: 'text',   placeholder: 'e.g. 1.8 kg' },
+  ],
+  'Smartphone': [
+    { key: 'processor', label: 'Processor',        type: 'text',   placeholder: 'e.g. Snapdragon 8 Gen 2' },
+    { key: 'ram',       label: 'RAM',              type: 'select', options: ['4GB','6GB','8GB','12GB','16GB'] },
+    { key: 'storage',   label: 'Internal Storage', type: 'select', options: ['64GB','128GB','256GB','512GB','1TB'] },
+    { key: 'display',   label: 'Display',          type: 'text',   placeholder: 'e.g. 6.7" AMOLED 120Hz' },
+    { key: 'camera',    label: 'Camera',           type: 'text',   placeholder: 'e.g. 200MP + 12MP + 10MP' },
+    { key: 'battery',   label: 'Battery',          type: 'text',   placeholder: 'e.g. 5000mAh, 67W Fast Charge' },
+    { key: 'os',        label: 'OS',               type: 'select', options: ['Android 14','Android 13','Android 12','iOS 17','iOS 16'] },
+    { key: 'network',   label: 'Network',          type: 'select', options: ['5G','4G LTE','3G'] },
+  ],
+  'Smartwatch': [
+    { key: 'displayType',     label: 'Display Type',    type: 'select', options: ['AMOLED','LCD','IPS','E-Ink','Retina LTPO'] },
+    { key: 'displaySize',     label: 'Display Size',    type: 'text',   placeholder: 'e.g. 1.8" 368x448px' },
+    { key: 'batteryLife',     label: 'Battery Life',    type: 'text',   placeholder: 'e.g. Up to 18 days' },
+    { key: 'waterResistance', label: 'Water Resistance',type: 'select', options: ['IP67','IP68','5ATM','10ATM','None'] },
+    { key: 'connectivity',    label: 'Connectivity',    type: 'text',   placeholder: 'e.g. Bluetooth 5.3, WiFi, GPS' },
+    { key: 'sensors',         label: 'Health Sensors',  type: 'text',   placeholder: 'e.g. Heart rate, SpO2, ECG' },
+    { key: 'compatibility',   label: 'Compatibility',   type: 'select', options: ['Android only','iOS only','Android & iOS'] },
+  ],
+  'Earphones / AirPods': [
+    { key: 'type',            label: 'Type',             type: 'select', options: ['True Wireless (TWS)','Wired Earphones','Neckband / Wireless','Over-Ear','On-Ear'] },
+    { key: 'driver',          label: 'Driver Size',      type: 'text',   placeholder: 'e.g. 13mm Dynamic' },
+    { key: 'batteryLife',     label: 'Battery Life',     type: 'text',   placeholder: 'e.g. 8hrs + 24hrs (case)' },
+    { key: 'noiseCancellation', label: 'Noise Cancellation', type: 'select', options: ['Active (ANC)','Passive','None'] },
+    { key: 'connectivity',    label: 'Connectivity',     type: 'select', options: ['Bluetooth 5.0','Bluetooth 5.1','Bluetooth 5.2','Bluetooth 5.3','Wired 3.5mm','Wired USB-C'] },
+    { key: 'waterResistance', label: 'Water Resistance', type: 'select', options: ['IPX4','IPX5','IPX7','None'] },
+    { key: 'microphone',      label: 'Microphone',       type: 'text',   placeholder: 'e.g. Dual mic with ENC' },
+  ],
+  'Bluetooth Speaker': [
+    { key: 'outputPower',     label: 'Output Power',     type: 'text',   placeholder: 'e.g. 40W RMS' },
+    { key: 'batteryLife',     label: 'Battery Life',     type: 'text',   placeholder: 'e.g. 12 hours' },
+    { key: 'connectivity',    label: 'Connectivity',     type: 'text',   placeholder: 'e.g. Bluetooth 5.1, AUX, USB-C' },
+    { key: 'waterResistance', label: 'Water Resistance', type: 'select', options: ['IPX4','IPX5','IPX7','IP67','None'] },
+    { key: 'channels',        label: 'Channels',         type: 'select', options: ['Mono','Stereo (2.0)','2.1','5.1'] },
+    { key: 'frequency',       label: 'Frequency Response',type: 'text',  placeholder: 'e.g. 80Hz - 20kHz' },
+  ],
+  'Smart TV': [
+    { key: 'screenSize',  label: 'Screen Size', type: 'select', options: ['24"','32"','40"','43"','50"','55"','65"','75"','85"'] },
+    { key: 'resolution',  label: 'Resolution',  type: 'select', options: ['HD (720p)','Full HD (1080p)','4K Ultra HD','8K'] },
+    { key: 'os',          label: 'Smart TV OS', type: 'select', options: ['Android TV','Google TV','Tizen','WebOS','Fire TV','Roku TV'] },
+    { key: 'refreshRate', label: 'Refresh Rate',type: 'select', options: ['60Hz','120Hz','144Hz'] },
+    { key: 'panelType',   label: 'Panel Type',  type: 'select', options: ['LED','OLED','QLED','Mini LED','NanoCell','IPS'] },
+    { key: 'connectivity',label: 'Connectivity',type: 'text',   placeholder: 'e.g. WiFi, Bluetooth, 3x HDMI, 2x USB' },
+  ],
+  'Tablet': [
+    { key: 'processor', label: 'Processor', type: 'text',   placeholder: 'e.g. Apple M2 / Snapdragon 870' },
+    { key: 'ram',       label: 'RAM',       type: 'select', options: ['4GB','6GB','8GB','12GB','16GB'] },
+    { key: 'storage',   label: 'Storage',   type: 'select', options: ['64GB','128GB','256GB','512GB','1TB'] },
+    { key: 'display',   label: 'Display',   type: 'text',   placeholder: 'e.g. 11" Liquid Retina 120Hz' },
+    { key: 'battery',   label: 'Battery',   type: 'text',   placeholder: 'e.g. 7500mAh, USB-C charging' },
+    { key: 'os',        label: 'OS',        type: 'select', options: ['iPadOS','Android','Windows 11'] },
+  ],
+  'Power Bank': [
+    { key: 'capacity',    label: 'Capacity',     type: 'select', options: ['5000mAh','10000mAh','20000mAh','25000mAh','30000mAh'] },
+    { key: 'inputPower',  label: 'Input',        type: 'text',   placeholder: 'e.g. 18W USB-C + Micro-USB' },
+    { key: 'outputPower', label: 'Output',       type: 'text',   placeholder: 'e.g. 22.5W QC, 20W PD' },
+    { key: 'ports',       label: 'Ports',        type: 'text',   placeholder: 'e.g. 2x USB-A, 1x USB-C' },
+    { key: 'weight',      label: 'Weight',       type: 'text',   placeholder: 'e.g. 220g' },
+  ],
+  'Router / WiFi Device': [
+    { key: 'type',         label: 'Type',         type: 'select', options: ['WiFi Router','Mesh System','Range Extender','4G/5G Router','WiFi Dongle'] },
+    { key: 'wifiStandard', label: 'WiFi Standard',type: 'select', options: ['WiFi 4 (802.11n)','WiFi 5 (802.11ac)','WiFi 6 (802.11ax)','WiFi 6E','WiFi 7'] },
+    { key: 'speed',        label: 'Max Speed',    type: 'text',   placeholder: 'e.g. AX3000 (3000 Mbps)' },
+    { key: 'bands',        label: 'Bands',        type: 'select', options: ['Single Band (2.4GHz)','Dual Band','Tri-Band'] },
+    { key: 'ports',        label: 'Ports',        type: 'text',   placeholder: 'e.g. 1x WAN GbE, 4x LAN GbE' },
+  ],
+  'Gift Item': [
+    { key: 'occasion',      label: 'Occasion',      type: 'text', placeholder: 'e.g. Birthday, Anniversary, Diwali' },
+    { key: 'material',      label: 'Material',      type: 'text', placeholder: 'e.g. Crystal, Wood, Metal' },
+    { key: 'dimensions',    label: 'Dimensions',    type: 'text', placeholder: 'e.g. 20cm x 15cm x 10cm' },
+    { key: 'packaging',     label: 'Packaging',     type: 'text', placeholder: 'e.g. Premium Gift Box included' },
+    { key: 'customization', label: 'Customization', type: 'text', placeholder: 'e.g. Name engraving available' },
+  ],
+};
+const PRODUCT_TYPE_LIST = Object.keys(PRODUCT_SPECS);
+
+// ── Dynamic Spec Fields ──────────────────────────────────────────────────────
+function SpecsFields({ productType, specs, onChange }) {
+  const fields = PRODUCT_SPECS[productType];
+  if (!fields) return null;
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {fields.map(f => (
+        <div key={f.key}>
+          <label className="text-xs font-medium text-gray-600 mb-1 block">{f.label}</label>
+          {f.type === 'select' ? (
+            <CustomSelect
+              value={specs[f.key] || ''}
+              onChange={v => onChange({ ...specs, [f.key]: v })}
+              options={f.options}
+              placeholder={`Select ${f.label}…`}
+            />
+          ) : (
+            <input
+              type="text"
+              value={specs[f.key] || ''}
+              onChange={e => onChange({ ...specs, [f.key]: e.target.value })}
+              placeholder={f.placeholder}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition"
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Variants Manager ─────────────────────────────────────────────────────────
+function VariantsSection({ variants, onChange }) {
+  const add = () => onChange([...variants, { label: '', price: '', discountPrice: '', stock: '' }]);
+  const remove = i => onChange(variants.filter((_, idx) => idx !== i));
+  const update = (i, key, val) => { const a = [...variants]; a[i] = { ...a[i], [key]: val }; onChange(a); };
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Variants</p>
+          <p className="text-xs text-gray-400 mt-0.5">Different sizes, capacities, or colors with individual prices.</p>
+        </div>
+        <button type="button" onClick={add}
+          className="flex items-center gap-1 bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-orange-200 transition">
+          + Add Variant
+        </button>
+      </div>
+      {variants.length === 0 ? (
+        <p className="text-xs text-gray-400 italic bg-gray-50 rounded-xl px-4 py-3">No variants — single price applies. Add variants for e.g. pendrives (128GB ₹499, 256GB ₹799…) or phones (8GB+128GB, 12GB+256GB…).</p>
+      ) : (
+        <div className="space-y-2">
+          <div className="grid grid-cols-4 gap-2 text-xs font-semibold text-gray-400 px-1">
+            <span>Label <span className="text-red-400">*</span></span>
+            <span>MRP (₹) <span className="text-red-400">*</span></span>
+            <span>Sale Price (₹)</span>
+            <span>Stock <span className="text-red-400">*</span></span>
+          </div>
+          {variants.map((v, i) => (
+            <div key={i} className="grid grid-cols-4 gap-2 items-center">
+              <input value={v.label} onChange={e => update(i, 'label', e.target.value)}
+                placeholder="e.g. 128GB" className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" />
+              <input type="number" min="0" value={v.price} onChange={e => update(i, 'price', e.target.value)}
+                placeholder="0" className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" />
+              <input type="number" min="0" value={v.discountPrice} onChange={e => update(i, 'discountPrice', e.target.value)}
+                placeholder="0" className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" />
+              <div className="flex gap-1">
+                <input type="number" min="0" value={v.stock} onChange={e => update(i, 'stock', e.target.value)}
+                  placeholder="0" className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" />
+                <button type="button" onClick={() => remove(i)}
+                  className="w-8 h-9 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition shrink-0">
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const emptyForm = { name: '', category: '', productType: '', brand: '', price: '', discountPrice: '', stock: '', description: '', keyFeatures: [], specifications: {}, variants: [], isActive: true };
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -74,10 +260,15 @@ export default function Products() {
     setEditing(product);
     setImagePreviews(product?.images || []);
     setForm(product ? {
-      name: product.name || '', category: product.category || '', brand: product.brand || '',
+      name: product.name || '', category: product.category || '',
+      productType: product.productType || '', brand: product.brand || '',
       price: product.price || '', discountPrice: product.discountPrice || '',
       stock: product.stock || '', description: product.description || '',
-      keyFeatures: product.keyFeatures || [], isActive: product.isActive ?? true,
+      keyFeatures: product.keyFeatures || [],
+      specifications: (product.specifications && typeof product.specifications === 'object' && !Array.isArray(product.specifications))
+        ? { ...product.specifications } : {},
+      variants: product.variants || [],
+      isActive: product.isActive ?? true,
     } : emptyForm);
     setModalOpen(true);
   };
@@ -103,15 +294,28 @@ export default function Products() {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.category || !form.price || !form.stock) { toast.error('Fill all required fields'); return; }
+    const validVariants = form.variants.filter(v => v.label && v.price && v.stock);
+    if (!form.name || !form.category) { toast.error('Name and category are required'); return; }
+    if (validVariants.length === 0 && (!form.price || !form.stock)) { toast.error('Add price & stock, or define at least one variant'); return; }
     setSaving(true);
     try {
-      // Images are already Cloudinary URLs stored in imagePreviews
+      const finalPrice = validVariants.length > 0
+        ? Math.min(...validVariants.map(v => Number(v.price))) : Number(form.price);
+      const saleVariants = validVariants.filter(v => Number(v.discountPrice) > 0);
+      const finalDiscountPrice = saleVariants.length > 0
+        ? Math.min(...saleVariants.map(v => Number(v.discountPrice))) : Number(form.discountPrice) || 0;
+      const finalStock = validVariants.length > 0
+        ? validVariants.reduce((s, v) => s + Number(v.stock), 0) : Number(form.stock);
       const payload = {
-        name: form.name, category: form.category, brand: form.brand,
-        price: form.price, discountPrice: form.discountPrice, stock: form.stock,
+        name: form.name, category: form.category, productType: form.productType, brand: form.brand,
+        price: finalPrice, discountPrice: finalDiscountPrice, stock: finalStock,
         description: form.description, isActive: form.isActive,
         keyFeatures: form.keyFeatures, images: imagePreviews,
+        specifications: form.specifications,
+        variants: validVariants.map(v => ({
+          label: v.label, price: Number(v.price),
+          discountPrice: Number(v.discountPrice) || 0, stock: Number(v.stock),
+        })),
       };
       if (editing) {
         const { data } = await api.put(`/products/${editing._id}`, payload);
@@ -300,29 +504,59 @@ export default function Products() {
                     <input type="text" value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))}
                       className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="e.g. Sony, Apple…" />
                   </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 mb-1 block">Product Type</label>
+                    <CustomSelect
+                      value={form.productType}
+                      onChange={v => setForm(f => ({ ...f, productType: v, specifications: {} }))}
+                      options={['— General product —', ...PRODUCT_TYPE_LIST]}
+                      placeholder="Select product type…"
+                    />
+                  </div>
+                </div>
+
+                {/* Specifications */}
+                {form.productType && (
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Specifications</p>
+                    <SpecsFields productType={form.productType} specs={form.specifications}
+                      onChange={s => setForm(f => ({ ...f, specifications: s }))} />
+                  </div>
+                )}
+
+                {/* Variants */}
+                <div>
+                  <VariantsSection variants={form.variants} onChange={v => setForm(f => ({ ...f, variants: v }))} />
                 </div>
 
                 {/* Pricing */}
-                <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Pricing & Inventory</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="text-xs font-medium text-gray-600 mb-1 block">MRP (₹) <span className="text-red-400">*</span></label>
-                      <input type="number" required min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="0" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-600 mb-1 block">Sale Price (₹)</label>
-                      <input type="number" min="0" value={form.discountPrice} onChange={e => setForm(f => ({ ...f, discountPrice: e.target.value }))}
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="0" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-600 mb-1 block">Stock Qty <span className="text-red-400">*</span></label>
-                      <input type="number" required min="0" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))}
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="0" />
+                {form.variants.filter(v => v.label && v.price && v.stock).length === 0 ? (
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Pricing &amp; Inventory</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">MRP (₹) <span className="text-red-400">*</span></label>
+                        <input type="number" min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="0" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">Sale Price (₹)</label>
+                        <input type="number" min="0" value={form.discountPrice} onChange={e => setForm(f => ({ ...f, discountPrice: e.target.value }))}
+                          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="0" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">Stock Qty <span className="text-red-400">*</span></label>
+                        <input type="number" min="0" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))}
+                          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 transition" placeholder="0" />
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-3">
+                    <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-1">Pricing &amp; Inventory</p>
+                    <p className="text-xs text-orange-400">Price and stock are auto-calculated from your variants above.</p>
+                  </div>
+                )}
 
                 {/* Description */}
                 <div>

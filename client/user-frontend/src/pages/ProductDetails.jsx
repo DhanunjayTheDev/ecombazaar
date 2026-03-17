@@ -18,6 +18,7 @@ export default function ProductDetails() {
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
   const [adding, setAdding] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState(null);
 
   // Review form state
   const [reviewRating, setReviewRating] = useState(0);
@@ -33,6 +34,7 @@ export default function ProductDetails() {
       try {
         const { data } = await api.get(`/products/${id}`);
         setProduct(data.product);
+        if (data.product?.variants?.length > 0) setSelectedVariant(data.product.variants[0]);
       } catch (err) {
 
         toast.error('Failed to load product');
@@ -58,6 +60,17 @@ export default function ProductDetails() {
   const discount = product.discountPrice && product.discountPrice < product.price
     ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
     : 0;
+
+  // Use selected variant's data if available
+  const activePrice = selectedVariant
+    ? (selectedVariant.discountPrice > 0 ? selectedVariant.discountPrice : selectedVariant.price)
+    : (product.discountPrice || product.price);
+  const activeMRP = selectedVariant ? selectedVariant.price : product.price;
+  const activeDiscount = activeMRP > activePrice ? Math.round(((activeMRP - activePrice) / activeMRP) * 100) : 0;
+  const activeStock = selectedVariant ? selectedVariant.stock : product.stock;
+  const specs = product.specifications
+    ? (product.specifications instanceof Map ? Object.fromEntries(product.specifications) : product.specifications)
+    : null;
 
   const handleAddToCart = async () => {
     if (!user) {
@@ -169,15 +182,37 @@ export default function ProductDetails() {
           </div>
 
           {/* Price */}
-          <div className="flex items-center gap-3 mb-6">
-            <span className="text-3xl font-bold text-gray-900">₹{(product.discountPrice || product.price).toLocaleString()}</span>
-            {discount > 0 && (
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-3xl font-bold text-gray-900">₹{activePrice.toLocaleString()}</span>
+            {activeDiscount > 0 && (
               <>
-                <span className="text-lg text-gray-400 line-through">₹{product.price.toLocaleString()}</span>
-                <span className="bg-green-100 text-green-600 text-sm font-bold px-2 py-0.5 rounded-full">{discount}% OFF</span>
+                <span className="text-lg text-gray-400 line-through">₹{activeMRP.toLocaleString()}</span>
+                <span className="bg-green-100 text-green-600 text-sm font-bold px-2 py-0.5 rounded-full">{activeDiscount}% OFF</span>
               </>
             )}
           </div>
+
+          {/* Variant Selector */}
+          {product.variants?.length > 0 && (
+            <div className="mb-6">
+              <p className="text-sm font-semibold text-gray-700 mb-2">Select Option:</p>
+              <div className="flex flex-wrap gap-2">
+                {product.variants.map((v, i) => (
+                  <button key={i} type="button" onClick={() => setSelectedVariant(v)}
+                    disabled={v.stock === 0}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition ${
+                      selectedVariant?.label === v.label
+                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                        : v.stock > 0 ? 'border-gray-200 text-gray-600 hover:border-orange-300' : 'border-gray-100 text-gray-300 cursor-not-allowed'
+                    }`}
+                  >
+                    {v.label}
+                    {v.stock === 0 && <span className="text-xs ml-1">(Out of stock)</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <p className="text-gray-600 leading-relaxed mb-6">{product.description}</p>
 
@@ -196,8 +231,8 @@ export default function ProductDetails() {
           )}
 
           <div className="mb-4">
-            <span className={`text-sm font-medium px-3 py-1 rounded-full ${product.stock > 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-              {product.stock > 0 ? `✓ In Stock (${product.stock} available)` : '✗ Out of Stock'}
+            <span className={`text-sm font-medium px-3 py-1 rounded-full ${activeStock > 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+              {activeStock > 0 ? `✓ In Stock (${activeStock} available)` : '✗ Out of Stock'}
             </span>
           </div>
 
@@ -207,7 +242,7 @@ export default function ProductDetails() {
             <div className="flex items-center border border-gray-200 rounded-full overflow-hidden">
               <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-4 py-2 hover:bg-gray-50 transition"><Minus size={14} /></button>
               <span className="px-4 py-2 font-semibold text-gray-800 min-w-[3rem] text-center">{qty}</span>
-              <button onClick={() => setQty(q => Math.min(product.stock, q + 1))} className="px-4 py-2 hover:bg-gray-50 transition"><Plus size={14} /></button>
+              <button onClick={() => setQty(q => Math.min(activeStock, q + 1))} className="px-4 py-2 hover:bg-gray-50 transition"><Plus size={14} /></button>
             </div>
           </div>
 
@@ -215,7 +250,7 @@ export default function ProductDetails() {
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
             <button
               onClick={handleAddToCart}
-              disabled={adding || product.stock === 0}
+              disabled={adding || activeStock === 0}
               className="flex-1 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white disabled:opacity-50 font-bold py-3 rounded-full transition flex items-center justify-center gap-2"
             >
               <ShoppingCart size={18} /> {adding ? 'Adding...' : 'Add to Cart'}
@@ -257,6 +292,27 @@ export default function ProductDetails() {
           </div>
         </div>
       </div>
+
+      {/* Specifications */}
+      {specs && Object.keys(specs).length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Specifications</h2>
+          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+            <table className="w-full text-sm">
+              <tbody className="divide-y divide-gray-50">
+                {Object.entries(specs).filter(([, val]) => val).map(([key, val]) => (
+                  <tr key={key}>
+                    <td className="px-5 py-3 font-medium text-gray-500 bg-gray-50 w-2/5 capitalize">
+                      {key.replace(/([A-Z])/g, ' $1').trim()}
+                    </td>
+                    <td className="px-5 py-3 text-gray-800">{val}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Reviews Section */}
       <div className="mt-12">

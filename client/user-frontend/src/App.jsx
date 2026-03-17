@@ -17,6 +17,8 @@ import OrderSuccess from './pages/OrderSuccess';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import Orders from './pages/Orders';
+import OrderDetails from './pages/OrderDetails';
 import NotFound from './pages/NotFound';
 function Layout({ children }) {
   return (
@@ -46,6 +48,8 @@ export default function App() {
               <Route path="/checkout" element={<ProtectedRoute><Layout><Checkout /></Layout></ProtectedRoute>} />
               <Route path="/order-success/:id" element={<ProtectedRoute><Layout><OrderSuccess /></Layout></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
+              <Route path="/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
+              <Route path="/order/:id" element={<ProtectedRoute><Layout><OrderDetails /></Layout></ProtectedRoute>} />
               <Route path="*" element={<Layout><NotFound /></Layout>} />
             </Routes>
           </WishlistProvider>
