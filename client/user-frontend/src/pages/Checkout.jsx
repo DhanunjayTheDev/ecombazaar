@@ -197,27 +197,50 @@ export default function Checkout() {
               <h2 className="font-bold text-gray-800">Payment Method</h2>
             </div>
             <div className="space-y-3">
-              {PAYMENT_METHODS.map(({ id, icon: Icon, label, desc, badge }) => (
-                <label
-                  key={id}
-                  className={`flex items-center gap-4 border-2 rounded-2xl p-4 cursor-pointer transition ${paymentMethod === id ? 'border-orange-500 bg-orange-50' : 'border-gray-100 hover:border-gray-200 bg-white'}`}
-                >
-                  <input type="radio" name="payment" value={id} checked={paymentMethod === id} onChange={() => setPaymentMethod(id)} className="sr-only" />
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${paymentMethod === id ? 'bg-orange-500' : 'bg-gray-100'}`}>
-                    <Icon size={18} className={paymentMethod === id ? 'text-white' : 'text-gray-500'} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-sm text-gray-800">{label}</p>
-                      {badge && <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full">{badge}</span>}
+              {PAYMENT_METHODS.map(({ id, icon: Icon, label, desc, badge }) => {
+                const isDisabled = id === 'Razorpay';
+                return (
+                  <label
+                    key={id}
+                    title={isDisabled ? 'Online payment is available soon' : ''}
+                    className={`flex items-center gap-4 border-2 rounded-2xl p-4 transition ${
+                      isDisabled
+                        ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60'
+                        : `cursor-pointer ${paymentMethod === id ? 'border-orange-500 bg-orange-50' : 'border-gray-100 hover:border-gray-200 bg-white'}`
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value={id}
+                      disabled={isDisabled}
+                      checked={paymentMethod === id}
+                      onChange={() => !isDisabled && setPaymentMethod(id)}
+                      className="sr-only"
+                    />
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        isDisabled ? 'bg-gray-200' : paymentMethod === id ? 'bg-orange-500' : 'bg-gray-100'
+                      }`}
+                    >
+                      <Icon size={18} className={isDisabled ? 'text-gray-400' : paymentMethod === id ? 'text-white' : 'text-gray-500'} />
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
-                  </div>
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${paymentMethod === id ? 'border-orange-500' : 'border-gray-300'}`}>
-                    {paymentMethod === id && <div className="w-2.5 h-2.5 bg-orange-500 rounded-full" />}
-                  </div>
-                </label>
-              ))}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm text-gray-800">{label}</p>
+                        {isDisabled && <span className="bg-gray-300 text-gray-700 text-xs font-medium px-2 py-0.5 rounded-full">Coming Soon</span>}
+                        {badge && !isDisabled && <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full">{badge}</span>}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">{isDisabled ? 'Online payment is available soon' : desc}</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                      isDisabled ? 'border-gray-300' : paymentMethod === id ? 'border-orange-500' : 'border-gray-300'
+                    }`}>
+                      {!isDisabled && paymentMethod === id && <div className="w-2.5 h-2.5 bg-orange-500 rounded-full" />}
+                    </div>
+                  </label>
+                );
+              })}
             </div>
           </div>
         </div>

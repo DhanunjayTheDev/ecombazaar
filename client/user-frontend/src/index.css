@@ -9,6 +9,10 @@
     @apply box-border m-0 p-0;
   }
 
+  button, a, [role="button"] {
+    cursor: pointer;
+  }
+
   body {
     @apply font-sans bg-white text-gray-900;
   }

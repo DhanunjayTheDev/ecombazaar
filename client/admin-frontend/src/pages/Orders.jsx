@@ -3,6 +3,9 @@ import { Search, X, Printer, Download, Package, MapPin, CreditCard, Clock, User,
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import CustomSelect from '../components/CustomSelect';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import logoSrc from '../assets/ssdealsify_logo.png';
 
 const STATUS_OPTIONS = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 const STATUS_COLORS = {
@@ -85,122 +88,145 @@ function StatusDropdown({ value, onChange }) {
   );
 }
 
-// ── Print / Download helper ───────────────────────────────────────────────
-function buildInvoiceHTML(order) {
+// ── PDF Invoice ───────────────────────────────────────────────────────────
+let _logoB64 = null;
+async function getLogoBase64() {
+  if (_logoB64) return _logoB64;
+  try {
+    const res = await fetch(logoSrc);
+    const blob = await res.blob();
+    _logoB64 = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); });
+    return _logoB64;
+  } catch { return null; }
+}
+
+function buildInvoiceHTML(order, logoB64) {
   const addr = order.shippingAddress || {};
   const items = order.items || [];
-  const history = order.statusHistory || [];
   const date = new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  const STATUS_BADGE = { Pending:{bg:'#fef3c7',c:'#92400e'}, Processing:{bg:'#dbeafe',c:'#1e40af'}, Shipped:{bg:'#ede9fe',c:'#5b21b6'}, Delivered:{bg:'#dcfce7',c:'#166534'}, Cancelled:{bg:'#fee2e2',c:'#991b1b'} };
+  const badge = STATUS_BADGE[order.status] || { bg:'#f3f4f6', c:'#374151' };
+  const subtotal = order.subtotal || items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const shipping = order.shippingCharge || order.shippingCost || 0;
   const rows = items.map(i => `
     <tr>
-      <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0">
-        <div style="font-weight:600;color:#1f2937">${i.name}</div>
-      </td>
-      <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;text-align:center">${i.quantity}</td>
-      <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;text-align:right">₹${i.price?.toLocaleString()}</td>
-      <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;text-align:right;font-weight:600">₹${(i.price * i.quantity).toLocaleString()}</td>
+      <td style="padding:10px;border-bottom:1px solid #f0f0f0;word-break:break-word"><div style="font-weight:600;color:#1f2937;line-height:1.5">${i.name || '—'}</div></td>
+      <td style="padding:10px;border-bottom:1px solid #f0f0f0;text-align:center;width:60px;color:#6b7280">${i.quantity}</td>
+      <td style="padding:10px;border-bottom:1px solid #f0f0f0;text-align:right;white-space:nowrap;width:110px">&#8377;${i.price?.toLocaleString()}</td>
+      <td style="padding:10px;border-bottom:1px solid #f0f0f0;text-align:right;white-space:nowrap;width:110px;font-weight:600">&#8377;${(i.price * i.quantity).toLocaleString()}</td>
     </tr>`).join('');
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" />
-  <title>Invoice – ${String(order._id).slice(-8).toUpperCase()}</title>
-  <style>
-    body{font-family:'Segoe UI',Arial,sans-serif;margin:0;padding:32px;color:#374151;font-size:13px}
-    h1{margin:0;font-size:22px;color:#f97316}h2{font-size:13px;margin:0 0 4px}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #f97316}
-    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:#fef3c7;color:#92400e}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
-    .box{background:#f9fafb;border-radius:10px;padding:14px}
-    .box label{display:block;font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
-    .box .val{font-weight:600;color:#111827}
-    table{width:100%;border-collapse:collapse;margin-bottom:20px}
-    thead tr{background:#f3f4f6}
-    th{padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase;color:#6b7280;letter-spacing:.05em}
-    th:last-child,th:nth-child(3),th:nth-child(2){text-align:right}th:nth-child(2){text-align:center}
-    .total-row{font-size:15px;font-weight:700;color:#f97316}
-    .footer{margin-top:28px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center}
-    @media print{body{padding:16px}}
-  </style>
-</head><body>
-  <div class="header">
-    <div><h1>Ssdealsify</h1><p style="margin:4px 0 0;color:#6b7280">Tax Invoice</p></div>
-    <div style="text-align:right">
-      <p style="font-size:18px;font-weight:700;color:#111">#${String(order._id).slice(-8).toUpperCase()}</p>
-      <p style="color:#6b7280;margin:2px 0">${date}</p>
-      <span class="badge">${order.status}</span>
-    </div>
-  </div>
-
-  <div class="grid2">
-    <div class="box">
-      <label>Bill To</label>
-      <div class="val">${order.user?.name || addr.fullName || '—'}</div>
-      <div>${order.user?.email || ''}</div>
-      ${order.user?.phone || addr.phone ? `<div>${order.user?.phone || addr.phone}</div>` : ''}
-    </div>
-    <div class="box">
-      <label>Ship To</label>
-      <div class="val">${addr.fullName || order.user?.name || '—'}</div>
-      <div>${addr.street || ''}</div>
-      <div>${[addr.city, addr.state].filter(Boolean).join(', ')} ${addr.zip || ''}</div>
-      <div>${addr.country || 'India'}</div>
-    </div>
-    <div class="box">
-      <label>Payment Method</label>
-      <div class="val">${order.paymentMethod || '—'}</div>
-      ${order.paymentId ? `<div style="font-size:11px;color:#9ca3af">ID: ${order.paymentId}</div>` : ''}
-    </div>
-    <div class="box">
-      <label>Payment Status</label>
-      <div class="val" style="color:${order.paymentMethod === 'COD' ? '#92400e' : '#065f46'}">
-        ${order.paymentMethod === 'COD' ? 'Pay on Delivery' : 'Paid Online'}
-      </div>
-    </div>
-  </div>
-
-  <table>
-    <thead><tr><th>Item</th><th>Qty</th><th>Unit Price</th><th>Amount</th></tr></thead>
-    <tbody>${rows}</tbody>
-    <tfoot>
-      <tr><td colspan="3" style="padding:8px;text-align:right;color:#6b7280">Subtotal</td><td style="padding:8px;text-align:right">₹${order.subtotal?.toLocaleString() || '—'}</td></tr>
-      <tr><td colspan="3" style="padding:8px;text-align:right;color:#6b7280">Tax (10%)</td><td style="padding:8px;text-align:right">₹${order.tax?.toLocaleString() || '—'}</td></tr>
-      <tr><td colspan="3" style="padding:8px;text-align:right;color:#6b7280">Shipping</td><td style="padding:8px;text-align:right">₹${order.shippingCharge?.toLocaleString() || '50'}</td></tr>
-      ${order.discount > 0 ? `<tr><td colspan="3" style="padding:8px;text-align:right;color:#059669">Discount</td><td style="padding:8px;text-align:right;color:#059669">−₹${order.discount?.toLocaleString()}</td></tr>` : ''}
-      <tr class="total-row"><td colspan="3" style="padding:10px 8px;text-align:right">Total</td><td style="padding:10px 8px;text-align:right">₹${order.totalAmount?.toLocaleString()}</td></tr>
-    </tfoot>
-  </table>
-
-  ${history.length > 0 ? `
-  <div style="margin-top:20px">
-    <h2 style="margin-bottom:10px;color:#374151">Order History</h2>
-    <table style="width:100%">
-      ${history.map(h => `<tr><td style="padding:5px 8px;color:#6b7280;font-size:11px">${new Date(h.updatedAt || h.date || h.createdAt || Date.now()).toLocaleString('en-IN')}</td><td style="padding:5px 8px;font-weight:600">${h.status}</td><td style="padding:5px 8px;color:#9ca3af">${h.note || ''}</td></tr>`).join('')}
-    </table>
-  </div>` : ''}
-
-  <div class="footer">Thank you for shopping with Ssdealsify · support@ssdealsify.in</div>
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Invoice #${String(order._id).slice(-8).toUpperCase()}</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#374151;background:#fff;padding:28px 32px;width:794px}
+.ilab{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af;font-weight:700;margin-bottom:6px}
+.ival{font-weight:700;color:#111827;font-size:12px;line-height:1.5;word-break:break-word}
+.isub{color:#6b7280;font-size:11px;margin-top:3px;line-height:1.5;word-break:break-word}
+</style></head><body>
+<table style="width:100%;border-collapse:collapse;border-bottom:3px solid #f97316"><tr>
+  <td style="padding-bottom:16px;vertical-align:middle">
+    ${logoB64 ? `<img src="${logoB64}" style="height:40px;display:block" alt="Ssdealsify">` : '<div style="font-size:22px;font-weight:700;color:#f97316">Ssdealsify</div>'}
+    <div style="font-size:10px;color:#6b7280;margin-top:4px">Tax Invoice</div>
+  </td>
+  <td style="text-align:right;vertical-align:middle;padding-bottom:16px">
+    <div style="font-size:18px;font-weight:700;color:#111">#${String(order._id).slice(-8).toUpperCase()}</div>
+    <div style="font-size:11px;color:#6b7280;margin-top:3px">${date}</div>
+    <span style="display:inline-block;margin-top:8px;padding:5px 12px;border-radius:20px;font-size:10px;font-weight:600;line-height:1.4;vertical-align:middle;background:${badge.bg};color:${badge.c}">${order.status}</span>
+  </td>
+</tr></table>
+<table style="width:100%;border-collapse:collapse;margin:16px 0 20px"><tr>
+  <td style="width:25%;padding:12px 14px;vertical-align:top;background:#f9fafb">
+    <div class="ilab">Bill To</div>
+    <div class="ival">${order.user?.name || addr.fullName || '—'}</div>
+    <div class="isub">${order.user?.email || ''}</div>
+    ${(order.user?.phone || addr.phone) ? `<div class="isub">${order.user?.phone || addr.phone}</div>` : ''}
+  </td>
+  <td style="width:25%;padding:12px 14px;vertical-align:top;background:#f9fafb;border-left:4px solid #fff">
+    <div class="ilab">Ship To</div>
+    <div class="ival">${addr.fullName || order.user?.name || '—'}</div>
+    <div class="isub">${[addr.street, [addr.city,addr.state].filter(Boolean).join(', '), addr.zip].filter(Boolean).join(', ')}</div>
+    <div class="isub">${addr.country || 'India'}</div>
+  </td>
+  <td style="width:25%;padding:12px 14px;vertical-align:top;background:#f9fafb;border-left:4px solid #fff">
+    <div class="ilab">Payment</div>
+    <div class="ival">${order.paymentMethod || '—'}</div>
+    <div class="isub">${order.paymentMethod === 'COD' ? 'Pay on Delivery' : 'Paid Online'}</div>
+  </td>
+  <td style="width:25%;padding:12px 14px;vertical-align:top;background:#f9fafb;border-left:4px solid #fff">
+    <div class="ilab">Status</div>
+    <div class="ival" style="color:${order.status==='Delivered'?'#059669':order.status==='Cancelled'?'#dc2626':'#f97316'}">${order.status}</div>
+    ${order.deliveredAt ? `<div class="isub">Delivered ${new Date(order.deliveredAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>` : ''}
+  </td>
+</tr></table>
+<table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f3f4f6">
+  <th style="padding:9px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;text-align:left">Item</th>
+  <th style="padding:9px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;text-align:center;width:60px">Qty</th>
+  <th style="padding:9px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;text-align:right;width:110px">Unit Price</th>
+  <th style="padding:9px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;text-align:right;width:110px">Amount</th>
+</tr></thead><tbody>${rows}</tbody></table>
+<table style="margin-left:auto;border-collapse:collapse;margin-top:6px;min-width:240px">
+  <tr><td style="padding:5px 20px 5px 8px;text-align:right;color:#6b7280">Subtotal</td><td style="padding:5px 8px;text-align:right;white-space:nowrap;font-weight:500">&#8377;${subtotal?.toLocaleString()}</td></tr>
+  ${order.tax > 0 ? `<tr><td style="padding:5px 20px 5px 8px;text-align:right;color:#6b7280">Tax (10%)</td><td style="padding:5px 8px;text-align:right;white-space:nowrap;font-weight:500">&#8377;${order.tax?.toLocaleString()}</td></tr>` : ''}
+  ${shipping > 0 ? `<tr><td style="padding:5px 20px 5px 8px;text-align:right;color:#6b7280">Shipping</td><td style="padding:5px 8px;text-align:right;white-space:nowrap;font-weight:500">&#8377;${shipping.toLocaleString()}</td></tr>` : ''}
+  ${order.discount > 0 ? `<tr><td style="padding:5px 20px 5px 8px;text-align:right;color:#059669">Discount</td><td style="padding:5px 8px;text-align:right;white-space:nowrap;color:#059669;font-weight:500">-&#8377;${order.discount?.toLocaleString()}</td></tr>` : ''}
+  <tr><td style="padding:10px 20px 5px 8px;text-align:right;border-top:2px solid #e5e7eb;font-size:14px;font-weight:700">Total</td><td style="padding:10px 8px 5px;text-align:right;border-top:2px solid #e5e7eb;font-size:14px;font-weight:700;white-space:nowrap;color:#f97316">&#8377;${order.totalAmount?.toLocaleString()}</td></tr>
+</table>
+<div style="margin-top:28px;padding-top:14px;border-top:1px solid #e5e7eb;text-align:center;font-size:10px;color:#9ca3af">Thank you for shopping with Ssdealsify &nbsp;&middot;&nbsp; support@ssdealsify.in</div>
 </body></html>`;
 }
 
-function printOrder(order) {
-  const w = window.open('', '_blank', 'width=900,height=700');
-  w.document.write(buildInvoiceHTML(order));
-  w.document.close();
-  w.focus();
-  setTimeout(() => w.print(), 500);
+async function makePDF(order) {
+  const logoB64 = await getLogoBase64();
+  const html = buildInvoiceHTML(order, logoB64);
+  const filename = `invoice-${String(order._id).slice(-8).toUpperCase()}.pdf`;
+  const iframe = document.createElement('iframe');
+  Object.assign(iframe.style, { position:'absolute', top:'-99999px', left:'0', width:'794px', height:'960px', border:'none', visibility:'hidden', pointerEvents:'none' });
+  document.body.appendChild(iframe);
+  iframe.contentDocument.open();
+  iframe.contentDocument.write(html);
+  iframe.contentDocument.close();
+  await new Promise(r => setTimeout(r, 900));
+  const bodyEl = iframe.contentDocument.body;
+  iframe.style.height = (bodyEl.scrollHeight + 60) + 'px';
+  await new Promise(r => setTimeout(r, 100));
+  const canvas = await html2canvas(bodyEl, { scale: 2, useCORS: true, allowTaint: true, logging: false, windowWidth: 794 });
+  document.body.removeChild(iframe);
+  const imgData = canvas.toDataURL('image/jpeg', 0.92);
+  const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const imgH = (canvas.height * pageW) / canvas.width;
+  let heightLeft = imgH, pos = 0;
+  pdf.addImage(imgData, 'JPEG', 0, pos, pageW, imgH);
+  heightLeft -= pageH;
+  while (heightLeft > 0) { pos -= pageH; pdf.addPage(); pdf.addImage(imgData, 'JPEG', 0, pos, pageW, imgH); heightLeft -= pageH; }
+  pdf.save(filename);
 }
 
-function downloadOrder(order) {
-  const w = window.open('', '_blank', 'width=900,height=700');
-  const html = buildInvoiceHTML(order);
-  w.document.write(html);
-  w.document.close();
-  w.focus();
-  // Trigger print dialog (user can "Save as PDF" from dialog)
-  setTimeout(() => {
-    w.print();
-    toast.success('Use "Save as PDF" in the print dialog to download');
-  }, 500);
+function printOrder(order) {
+  const html = buildInvoiceHTML(order, null);
+  const scriptTag = `<script>window.addEventListener('load',function(){setTimeout(function(){window.print()},400)})<\/script>`;
+  const fullHtml = html.replace('</body>', scriptTag + '</body>');
+  const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, '_blank');
+  if (!w) toast.error('Popup blocked — allow popups');
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
+
+async function downloadOrder(order) {
+  const toastId = toast.loading('Generating PDF…');
+  try {
+    await makePDF(order);
+    toast.success('Invoice downloaded!', { id: toastId });
+  } catch (err) {
+    console.error('PDF error:', err);
+    toast.error('PDF failed — try again', { id: toastId });
+  }
+}
+
+
 
 // ── Status Pill ───────────────────────────────────────────────────────────
 function StatusPill({ status }) {
